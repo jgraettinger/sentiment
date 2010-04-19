@@ -1,0 +1,30 @@
+
+project root
+    : requirements <threading>multi <include>.
+    : default-build debug 
+    : build-dir build
+;
+
+# Figure out where to install to.
+# Use seperate 'release' & 'debug' directories
+if release in [ modules.peek : ARGV ]
+{ path-constant INSTALL : release ; }
+else
+{ path-constant INSTALL : debug ; }
+
+# Finally, look for a user-provided override
+.user_path = [ MATCH --install=(.*) : [ modules.peek : ARGV ] ] ;
+if $(.user_path)
+{
+    ECHO Installing to $(.user_path) ;
+    path-constant INSTALL : $(.user_path) ;
+}
+
+using python ;
+
+build-project cluster ;
+
+install py_dist :
+    [ glob-tree *.py : debug release ]
+    : <location>$(INSTALL) <install-source-root>. ;
+

@@ -1,0 +1,10 @@
+
+python-extension _cluster :
+    [ glob *.cpp ]
+    /site-config//boost_python
+;
+
+install ext_dist :
+    _cluster
+    : <location>$(INSTALL)/cluster ;
+
