@@ -1,6 +1,8 @@
 #ifndef UTIL_HPP
 #define UTIL_HPP
 
+#include <boost/python.hpp>
+
 /*
 #include <cmath>
 

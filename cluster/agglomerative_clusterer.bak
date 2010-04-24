@@ -43,10 +43,11 @@ dendrogram::ptr_t agglomerative_clusterer<Similarity>::cluster(bpl::object items
     bpl::object iter = get_iterator(items);
     for(bpl::object item; next(iter, item);)
     {
-        clusters.push_back( typename clusters_t::value_type(
-            new dendrogram(bpl::extract<unsigned long long>(item[0])),
-            sim.extract_features(item[1])
-        ));
+        clusters.push_back( typename clusters_t::value_type());
+
+        clusters.back().first.reset(
+            new dendrogram(bpl::extract<unsigned long long>(item[0])));
+        sim.extract_features(item[1], clusters.back().second);
     }
 
     if(clusters.empty())
@@ -89,7 +90,7 @@ dendrogram::ptr_t agglomerative_clusterer<Similarity>::cluster(bpl::object items
                 new dendrogram(max2->first->item(), max1->first, max2->first));
 
         max1->second = sim.merge_features(
-            max1->second, max2->second);
+            max1->second, 1.0,  max2->second, 1.0);
 
         clusters.erase(max2);
         print_root(max1);

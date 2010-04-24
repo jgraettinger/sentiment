@@ -1,7 +1,7 @@
 import urllib
-import sqlite3
 import cjson
 import sys
+from schema import cluster_db
 
 terms = sys.argv[1:] 
 args = {'lang': 'en', 'rpp': '100'}.items()
@@ -9,14 +9,7 @@ args.extend(('q', i) for i in terms)
 
 uri_base = "http://search.twitter.com/search.json"
 
-db = sqlite3.connect('test.db', isolation_level = None)
-db.executescript("""
-    create table if not exists document (
-        id integer primary key autoincrement,
-        content text not null,
-        norm_content text not null
-    );
-""")
+db = cluster_db.connect('test.db')
 db.execute('begin')
 
 next_page = '?%s' % urllib.urlencode(args)

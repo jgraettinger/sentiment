@@ -8,10 +8,10 @@ namespace cluster {
 
 namespace bpl = boost::python;
 
-group_average_similarity::features_t group_average_similarity::extract_features(
-    boost::python::object o)
+void group_average_similarity::extract_features(
+    bpl::object o, group_average_similarity::features_t & fout)
 {
-    features_t fout; fout.reserve(boost::python::len(o));
+    fout.reserve(boost::python::len(o));
 
     float norm = 0;
 
@@ -32,7 +32,7 @@ group_average_similarity::features_t group_average_similarity::extract_features(
         it->second *= norm;
 
     std::sort(fout.begin(), fout.end());
-    return fout;
+    return;
 }
 
 };
