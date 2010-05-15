@@ -1,6 +1,6 @@
 
 project root
-    : requirements <threading>multi <include>.
+    : requirements <threading>multi
     : default-build debug 
     : build-dir build
 ;
@@ -22,9 +22,7 @@ if $(.user_path)
 
 using python ;
 
-build-project cluster ;
-
-install py_dist :
-    [ glob-tree *.py : debug release ]
-    : <location>$(INSTALL) <install-source-root>. ;
+build-project cpp_src ;
+build-project py_src ;
+build-project www ;
 
