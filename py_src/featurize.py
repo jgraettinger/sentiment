@@ -2,8 +2,6 @@
 from cluster import sparse_vectorspace_featurizer
 from cluster import dense_vectorspace_featurizer
 
-intern_tab = {}
-
 class TfIdfVectorFeaturizer(sparse_vectorspace_featurizer):
 
     def __init__(self):
@@ -18,7 +16,7 @@ class TfIdfVectorFeaturizer(sparse_vectorspace_featurizer):
             t_id = self._itab.setdefault(tok, len(self._itab))
             self._df[t_id] = 1 + self._df.get(t_id, 0)
 
-    def featurize(self, doc_sample):
+    def _py_featurize(self, doc_sample):
         tokens = doc_sample.content.split()
 
         feat = {}
@@ -29,3 +27,18 @@ class TfIdfVectorFeaturizer(sparse_vectorspace_featurizer):
 
         return feat 
 
+class TfVectorFeaturizer(sparse_vectorspace_featurizer):
+
+    def __init__(self):
+        sparse_vectorspace_featurizer.__init__(self)
+        self._itab = {}
+
+    def _py_featurize(self, doc_sample):
+        tokens = doc_sample.content.split()
+        feat = {}
+        for tok in tokens:
+            t_id = self._itab.setdefault(tok, len(self._itab))
+
+            feat[t_id] = feat.get(t_id, 0) + 1.0
+
+        return feat

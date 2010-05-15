@@ -21,7 +21,7 @@ public:
         sparse_vectorspace_features & feat(*feat_ptr);
 
         // call subclass featurize()
-        bpl::object o = this->get_override("featurize")(s);
+        bpl::object o = this->get_override("_py_featurize")(s);
 
         feat.reserve(bpl::len(o));
 
@@ -59,7 +59,7 @@ public:
         dense_vectorspace_features & feat(*feat_ptr);
 
         // call subclass featurize()
-        bpl::object o(this->get_override("featurize")(s));
+        bpl::object o(this->get_override("_py_featurize")(s));
         feat.reserve(bpl::len(o));
 
         double norm = 0;
@@ -86,13 +86,13 @@ void make_vectorspace_features_bindings()
         py_sparse_vectorspace_featurizer::ptr_t,
         boost::noncopyable>(
         "sparse_vectorspace_featurizer", bpl::init<>())
-    .def("featurize", bpl::pure_virtual(&featurizer::featurize));
+    .def("featurize", &featurizer::featurize);
 
     bpl::class_<py_dense_vectorspace_featurizer,
         py_dense_vectorspace_featurizer::ptr_t,
         boost::noncopyable>(
         "dense_vectorspace_featurizer", bpl::init<>())
-    .def("featurize", bpl::pure_virtual(&featurizer::featurize));
+    .def("featurize", &featurizer::featurize);
 }
 
 };

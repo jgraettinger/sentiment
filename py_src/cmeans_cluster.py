@@ -118,7 +118,7 @@ class HTTPHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         else:
 
             try:
-                content = open(self.path[1:]).read()
+                content = open('www/' + self.path[1:]).read()
             except Exception, e:
                 content = str(e) 
     

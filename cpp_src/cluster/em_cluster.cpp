@@ -157,7 +157,8 @@ bpl::object em_cluster::get_sample_probabilities(const string & sample_uid)
 
     for(; it2 != states.end(); ++it1, ++it2)
     {
-        probs[*it1] = it2->prob_class_sample;
+        probs[*it1] = it2->prob_class_sample * (
+            it2->is_hard ? hard_norm : soft_norm);
     }
     return probs;
 }

@@ -25,4 +25,4 @@ using python ;
 build-project cpp_src ;
 build-project py_src ;
 build-project www ;
-
+build-project tests ;

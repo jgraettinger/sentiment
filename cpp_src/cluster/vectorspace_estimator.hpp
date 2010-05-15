@@ -38,8 +38,6 @@ public:
     void add_sample_probability(
         const sample_features::ptr_t & f, double prob_class_item)
     {
-//        std::cout << prob_class_item << std::endl;
-        
         if(prob_class_item < _min_prob)
             return;
 
@@ -66,10 +64,7 @@ public:
             it != _centroid.end(); ++it)
         {
             it->second *= norm;
-        
-//            std::cout << it->first << ": " << it->second << ", ";
         }
-        std::cout << std::endl;
         return;
     }
 
@@ -90,8 +85,7 @@ public:
 
             p_item += it->second * feat[i].second;
         }
-        
-        return p_item * p_item * p_item;
+        return p_item;
     }
 
 private:
