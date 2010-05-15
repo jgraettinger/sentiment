@@ -42,12 +42,12 @@ public:
 
     // train
     virtual void add_sample_probability(
-        const sample_features::ptr_t & f, float prob_class_sample) = 0;
+        const sample_features::ptr_t & f, double prob_class_sample) = 0;
 
     virtual void prepare_estimator() = 0;
 
     // decode prob(sample | class)
-    virtual float estimate_sample(const sample_features::ptr_t & f) = 0;
+    virtual double estimate_sample(const sample_features::ptr_t & f) = 0;
 
 protected:
 

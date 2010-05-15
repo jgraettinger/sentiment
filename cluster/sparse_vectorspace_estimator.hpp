@@ -14,7 +14,7 @@ public:
 
     class features :
         public base_estimator::item_features,
-        public std::vector< std::pair<unsigned, float> >
+        public std::vector< std::pair<unsigned, double> >
     { };
 
     // Item interface
@@ -30,16 +30,16 @@ public:
 
     // train
     void add_item_probability(
-        const item_features::ptr_t, float prob_class_item);
+        const item_features::ptr_t, double prob_class_item);
 
     void prepare_estimator();
 
     // decode prob(item | class)
-    float estimate_item(const item_features::ptr_t);
+    double estimate_item(const item_features::ptr_t);
 
 private:
 
-    typedef boost::unordered_map<unsigned, float> estimator_t;
+    typedef boost::unordered_map<unsigned, double> estimator_t;
 
     estimator_t _estimator;
 };
@@ -49,7 +49,7 @@ inline sparse_vectorspace_estimator::reset_estimator()
 { _estimator.clear(); }
 
 inline sparse_vectorspace_estimator::add_item_probability(
-    const base_estimator::item_features::ptr_t & f, float prob_class_item)
+    const base_estimator::item_features::ptr_t & f, double prob_class_item)
 {
     if(prob_class_item < 0.1)
         return;
@@ -65,7 +65,7 @@ inline sparse_vectorspace_estimator::add_item_probability(
 inline sparse_vectorspace_estimator::prepare_estimator()
 {
     // Normalize to unit length
-    float norm = 0;
+    double norm = 0;
     for(estimator_t::iterator it = _estimator.begin();
         it != _estimator.end(); ++it)
     {
@@ -83,12 +83,12 @@ inline sparse_vectorspace_estimator::prepare_estimator()
     return;
 }
 
-inline float sparse_vectorspace_estimator::estimate_item(
+inline double sparse_vectorspace_estimator::estimate_item(
     const base_estimator::item_features::ptr_t & f)
 {
     features & feat( dynamic_cast<features&>(*f));
 
-    float p_item = 0;
+    double p_item = 0;
     for(size_t i = 0; i != feat.size(); ++i)
     {
         estimator_t::const_iterator it(

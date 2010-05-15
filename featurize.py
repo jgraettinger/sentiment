@@ -4,22 +4,28 @@ from cluster import dense_vectorspace_featurizer
 
 intern_tab = {}
 
-class BigramFeaturizer(sparse_vectorspace_featurizer):
-    
+class TfIdfVectorFeaturizer(sparse_vectorspace_featurizer):
+
+    def __init__(self):
+        sparse_vectorspace_featurizer.__init__(self)
+        self._itab = {}
+        self._df = {}
+
+    def accumulate_doc_frequency(self, content):
+        tokens = set(content.encode('utf8').split())
+
+        for tok in tokens:
+            t_id = self._itab.setdefault(tok, len(self._itab))
+            self._df[t_id] = 1 + self._df.get(t_id, 0)
+
     def featurize(self, doc_sample):
         tokens = doc_sample.content.split()
 
         feat = {}
-        for ind in xrange(len(tokens)):
-            un_tok_id = intern_tab.setdefault(tokens[ind], len(intern_tab))
-            feat[un_tok_id] = feat.get(un_tok_id, 0) + 1
+        for tok in tokens:
+            t_id = self._itab[tok]
 
-            if ind == len(tokens) - 1: continue
+            feat[t_id] = feat.get(t_id, 0) + (1.0 / self._df[t_id])
 
-            bi_tok_id = intern_tab.setdefault(' '.join(tokens[ind:ind+2]), len(intern_tab))
-            feat[bi_tok_id] = feat.get(bi_tok_id, 0) + 1
-        
-        if not feat:
-            print doc_sample.uid, doc_sample.content
         return feat 
 

@@ -10,7 +10,7 @@ namespace cluster
 
 class sparse_vectorspace_features :
     public sample_features,
-    public std::vector< std::pair<unsigned, float> >
+    public std::vector< std::pair<unsigned, double> >
 {
 public:
 
@@ -18,7 +18,7 @@ public:
 
     void normalize()
     {
-        float norm = 0;
+        double norm = 0;
         for(size_t i = 0; i != size(); ++i)
             norm += (*this)[i].second * (*this)[i].second;
 
@@ -31,7 +31,7 @@ public:
 
 class dense_vectorspace_features :
     public sample_features,
-    public std::vector<float>
+    public std::vector<double>
 {
 public:
 
@@ -39,7 +39,7 @@ public:
 
     void normalize()
     {
-        float norm = 0;
+        double norm = 0;
         for(size_t i = 0; i != size(); ++i)
             norm += (*this)[i] * (*this)[i];
 

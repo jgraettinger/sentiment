@@ -87,7 +87,7 @@ void em_cluster::add_sample(
     for(bpl::object clus, iter = get_iterator(hard_clusters); next(iter, clus);)
     {
         string cluster_uid = bpl::extract<string>(clus[0])();
-        float prob_class_sample = bpl::extract<float>(clus[1])();
+        double prob_class_sample = bpl::extract<double>(clus[1])();
 
         vector<string>::iterator it = lower_bound(
             _clusters.begin(), _clusters.end(), cluster_uid);
@@ -107,7 +107,7 @@ void em_cluster::add_sample(
     for(bpl::object clus, iter = get_iterator(soft_clusters); next(iter, clus);)
     {
         string cluster_uid = bpl::extract<string>(clus[0])();
-        float prob_class_sample = bpl::extract<float>(clus[1])();
+        double prob_class_sample = bpl::extract<double>(clus[1])();
 
         vector<string>::iterator it = lower_bound(
             _clusters.begin(), _clusters.end(), cluster_uid);
@@ -147,25 +147,24 @@ bpl::object em_cluster::get_sample_probabilities(const string & sample_uid)
 
     sample_cluster_states_t & states( _samples[sample_uid].cluster_states);
 
-    float hard_norm, soft_norm;
+    double hard_norm, soft_norm;
     compute_pclass_norms(states, hard_norm, soft_norm);
 
-    bpl::list probs;
+    bpl::dict probs;
 
     vector<string>::const_iterator it1 = _clusters.begin();
     sample_cluster_states_t::const_iterator it2 = states.begin();
 
     for(; it2 != states.end(); ++it1, ++it2)
     {
-        probs.append( bpl::make_tuple(
-            *it1, it2->prob_class_sample));
+        probs[*it1] = it2->prob_class_sample;
     }
     return probs;
 }
 
 void em_cluster::compute_pclass_norms(
     em_cluster::sample_cluster_states_t & states,
-    float & hard_norm, float & soft_norm)
+    double & hard_norm, double & soft_norm)
 {
     // compute sum{ P(class | sample) } (for normalization)
     soft_norm = 0; hard_norm = 0;
@@ -193,10 +192,10 @@ void em_cluster::compute_pclass_norms(
     return;
 }
 
-float em_cluster::iterate()
+double em_cluster::iterate()
 {
     // P(class)
-    vector<float> cluster_probs(_clusters.size(), 0);
+    vector<double> cluster_probs(_clusters.size(), 0);
 
     for(size_t i = 0; i != _clusters.size(); ++i)
         _cluster_estimators[i]->reset_estimator();
@@ -205,13 +204,13 @@ float em_cluster::iterate()
     {
         sample_cluster_states_t & states( it->second.cluster_states);
         
-        float hard_norm, soft_norm;
+        double hard_norm, soft_norm;
         compute_pclass_norms(states, hard_norm, soft_norm);
 
         // feed sample & P(class | sample) to estimators
         for(size_t i = 0; i != states.size(); ++i)
         {
-            float prob_class_sample = states[i].prob_class_sample * (
+            double prob_class_sample = states[i].prob_class_sample * (
                 states[i].is_hard ? hard_norm : soft_norm);
 
             _cluster_estimators[i]->add_sample_probability(
@@ -233,7 +232,7 @@ float em_cluster::iterate()
         sample_cluster_states_t & states( it->second.cluster_states);
 
         // P(sample) = sum{ P(sample|class)}
-        float prob_sample = 0;
+        double prob_sample = 0;
 
         for(size_t i = 0; i != states.size(); ++i)
         {
@@ -244,22 +243,29 @@ float em_cluster::iterate()
             prob_sample += states[i].prob_sample_class;
         }
 
-        std::cout << "P(sample) " << prob_sample << std::endl;
+//        std::cout << "P(sample) " << prob_sample << std::endl;
 
         if(!prob_sample)
             prob_sample = 1;
 
         for(size_t i = 0; i != states.size(); ++i)
         {
-            std::cout << states[i].prob_class_sample << " => ";
+//            std::cout << states[i].prob_class_sample << " => ";
+
+            if(states[i].is_hard)
+                continue;
 
             // P(class|sample) = P(class) * P(sample|class) / P(sample)
             states[i].prob_class_sample = \
                 cluster_probs[i] * states[i].prob_sample_class / prob_sample;
 
-            std::cout << states[i].prob_class_sample << ", ";
+//            std::cout << cluster_probs[i] << " * " << states[i].prob_sample_class;
+//            std::cout << " / " << prob_sample << std::endl;
+
+
+//            std::cout << states[i].prob_class_sample << ", ";
         }
-        std::cout << std::endl;
+//        std::cout << std::endl;
     }
 
     for(size_t i = 0; i != _clusters.size(); ++i)

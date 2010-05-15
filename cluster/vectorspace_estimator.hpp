@@ -22,7 +22,7 @@ public:
 
     sparse_vectorspace_estimator(
         const featurizer::ptr_t & f,
-        float min_cluster_prob
+        double min_cluster_prob
     )
      : estimator(f),
        _min_prob(min_cluster_prob)
@@ -36,7 +36,7 @@ public:
 
     // train on sample & P(class | sample)
     void add_sample_probability(
-        const sample_features::ptr_t & f, float prob_class_item)
+        const sample_features::ptr_t & f, double prob_class_item)
     {
 //        std::cout << prob_class_item << std::endl;
         
@@ -53,7 +53,7 @@ public:
     void prepare_estimator()
     {
         // Normalize to unit length
-        float norm = 0;
+        double norm = 0;
         for(centroid_t::iterator it = _centroid.begin();
             it != _centroid.end(); ++it)
         {
@@ -74,12 +74,12 @@ public:
     }
 
     // decode prob(sample | class)
-    float estimate_sample(const sample_features::ptr_t & f)
+    double estimate_sample(const sample_features::ptr_t & f)
     {
         sparse_vectorspace_features & feat(
             dynamic_cast<sparse_vectorspace_features&>(*f));
 
-        float p_item = 0;
+        double p_item = 0;
         for(size_t i = 0; i != feat.size(); ++i)
         {
             centroid_t::const_iterator it(
@@ -96,9 +96,9 @@ public:
 
 private:
 
-    typedef boost::unordered_map<unsigned, float> centroid_t;
+    typedef boost::unordered_map<unsigned, double> centroid_t;
 
-    float _min_prob;
+    double _min_prob;
     centroid_t _centroid;
 };
 
@@ -112,7 +112,7 @@ public:
 
     dense_vectorspace_estimator(
         const featurizer::ptr_t & f,
-        float min_cluster_prob
+        double min_cluster_prob
     )
      : estimator(f),
        _min_prob(min_cluster_prob)
@@ -126,7 +126,7 @@ public:
 
     // train on sample & P(class | sample)
     void add_sample_probability(
-        const sample_features::ptr_t & f, float prob_class_item)
+        const sample_features::ptr_t & f, double prob_class_item)
     {
         if(prob_class_item < _min_prob)
             return;
@@ -147,7 +147,7 @@ public:
     void prepare_estimator()
     {
         // Normalize to unit length
-        float norm = 0;
+        double norm = 0;
         for(centroid_t::iterator it = _centroid.begin();
             it != _centroid.end(); ++it)
         {
@@ -165,7 +165,7 @@ public:
     }
 
     // decode prob(sample | class)
-    float estimate_sample(const sample_features::ptr_t & f)
+    double estimate_sample(const sample_features::ptr_t & f)
     {
         dense_vectorspace_features & feat(
             dynamic_cast<dense_vectorspace_features&>(*f));
@@ -173,7 +173,7 @@ public:
         if(_centroid.size() != feat.size())
             throw std::runtime_error("feature arity mismatch");
 
-        float p_item = 0;
+        double p_item = 0;
         for(size_t i = 0; i != feat.size(); ++i)
         {
             p_item += _centroid[i] * feat[i];
@@ -183,9 +183,9 @@ public:
 
 private:
 
-    typedef std::vector<float> centroid_t;
+    typedef std::vector<double> centroid_t;
 
-    float _min_prob;
+    double _min_prob;
     centroid_t _centroid;
 };
 

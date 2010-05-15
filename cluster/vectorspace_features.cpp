@@ -25,11 +25,11 @@ public:
 
         feat.reserve(bpl::len(o));
 
-        float norm = 0;
+        double norm = 0;
         for(bpl::object f, iter = get_iterator(o); next(iter, f);)
         {
             unsigned feat_id = bpl::extract<unsigned>(f[0]);
-            float feat_val = bpl::extract<float>(f[1]);
+            double feat_val = bpl::extract<double>(f[1]);
 
             feat.push_back( std::make_pair(feat_id, feat_val));
             norm += feat_val * feat_val;
@@ -62,10 +62,10 @@ public:
         bpl::object o(this->get_override("featurize")(s));
         feat.reserve(bpl::len(o));
 
-        float norm = 0;
+        double norm = 0;
         for(bpl::object f, iter = get_iterator(o); next(iter, f);)
         {
-            float feat_val = bpl::extract<float>(f);
+            double feat_val = bpl::extract<double>(f);
 
             feat.push_back(feat_val);
             norm += feat_val * feat_val;

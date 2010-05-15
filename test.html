@@ -1,0 +1,190 @@
+<html>
+<head>
+
+<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script>
+<script src="http://ajax.googleapis.com/ajax/libs/jqueryui/1.8.1/jquery-ui.min.js"></script>
+
+<style>
+@import "smoothness/jquery-ui-1.8.1.custom.css";
+
+.ui-tabs .ui-tabs-hide {
+    display: none;
+}
+
+#clusters_container .cluster
+{
+    width: 500px;
+    border: 1px solid black;
+}
+
+.cluster_panel
+{
+
+}
+
+.doc_panel
+{
+display: none;
+height: 75;
+background: #dddddd;
+border: 2px solid white;
+}
+
+.doc_header
+{
+background: #cccccc;
+height: 22px;
+width: 50px;
+}
+
+.doc_content
+{
+}
+</style>
+<script>
+
+function on_doc_content_load(doc)
+{
+    $('#dpanel-' + doc.uid + ' .doc_content').html('').text(doc.content);
+}
+
+function on_cluster_docs_load(cluster)
+{
+    var uid_list = cluster.document_uids;
+
+    // set of document uid's
+    var uid_set = {}
+    for(var i in uid_list){ uid_set['dpanel-' + uid_list[i]] = 1; }
+
+    // remove stale documents
+    $('#cpanel-' + cluster.uid + ' .doc_panel').filter(
+        function(ind){ return !($(this).attr('id') in uid_set); }
+    ).slideUp("slow", function() { $(this).remove(); });
+
+    // add new documents by prepending to cpanel
+    for(var i in uid_list)
+    {
+        if($('#cpanel-' + cluster.uid + ' #dpanel-' + uid_list[i]).length)
+        { continue; }
+
+        var dpanel = $(
+            '<div id="dpanel-' + uid_list[i] + '" class="doc_panel">' + 
+            '<div class="doc_header"/><div class="doc_content"/></div>');
+
+        dpanel.prependTo($('#cpanel-' + cluster.uid));
+        dpanel.slideDown("slow");
+
+        $('.doc_header', dpanel).draggable({revert: 'invalid', opacity: 0.5}); 
+
+        $('.doc_header', dpanel).text(uid_list[i]);
+        $('.doc_content', dpanel).html('<i>Loading...</i>')
+
+        // async doc load
+        $.getJSON('doc_content?document_uid=' + uid_list[i], on_doc_content_load);
+    }
+
+    setTimeout(function(){ $.getJSON('cluster_docs?count=12&cluster_uid=' + cluster.uid, on_cluster_docs_load) }, 5000);
+}
+
+function on_doc_cluster_drop(event, ui)
+{
+    var doc_uid = ui.draggable.parent().attr('id').substring(7);
+    var c_uid = $(this).attr('id').substring(5);
+
+    ui.draggable.parent().remove();
+    $.getJSON('doc_cluster_link?document_uid=' + doc_uid + '&cluster_uid=' + c_uid, on_doc_cluster_link);
+}
+
+function on_doc_cluster_link(t)
+{ }
+
+function on_clusters_load(clusters)
+{
+    var tab_sel = $('#cluster_container').tabs('option', 'selected');
+    $('#cluster_container').tabs('destroy');
+
+    // dynamically build cluster tabs
+    for(var c_uid in clusters)
+    {
+        if($('#ctab-' + c_uid).length)
+        { continue; }
+
+        // <li id="ctab-$id"><a href="#cpanel-$id">Cluster Name</a></li>
+        var parts = [
+            '<li id="ctab-', c_uid, '"><a href="#cpanel-',
+            c_uid, '">', clusters[c_uid], '</a></li>']
+
+        var tab = $(parts.join(''));
+
+        tab.droppable({
+            accept: '.doc_header',
+            activeClass: 'ui-state-hover',
+            drop: on_doc_cluster_drop,
+        });
+
+        tab.appendTo($('#cluster_tabs'));
+    }
+
+    // dynamically build cluster content panels
+    for(var c_uid in clusters)
+    {
+        if($('#cpanel-' + c_uid).length)
+        { continue; }
+
+        $('<div id="cpanel-' + c_uid + '" class="cluster_panel"/>'
+            ).appendTo($('#cluster_container'));
+
+        // query for panel content
+        $.getJSON('cluster_docs?count=10&cluster_uid=' + c_uid, on_cluster_docs_load);
+    }
+
+    // re-init widget
+    $('#cluster_container').tabs();
+}
+
+function on_iterate(t)
+{ }
+/*
+function on_documents_load(documents)
+{
+    for(var i in documents)
+    {
+        var doc = documents[i];
+        for(var c_id in all_clusters)
+        {
+            var clus_div = $('#cluster_' + c_id);
+
+            $("<h3><a href='#'>" + doc['uid'] + "</a></h3><div>" + doc['content'] + "</div>"
+                ).appendTo( clus_div);
+        }
+        all_documents.push(doc);
+    }
+    
+    for(var c_id in all_clusters)
+    {
+        var clus_div = $('#cluster_' + c_id);
+        var active = clus_div.accordion("option", "active");
+        clus_div.accordion('destroy').accordion({event: "mouseover", "active": active});
+    }
+    return;
+}
+*/
+
+$(document).ready(function(){
+    $.getJSON('clusters', on_clusters_load);
+    $('#cluster_container').tabs();
+    setInterval(function(){ $.getJSON('iterate', on_iterate); }, 5000);
+});
+
+</script>
+
+</head>
+
+<body>
+
+<div id="cluster_container" class="ui-tabs">
+    <ul id="cluster_tabs"></ul>
+</div>
+
+</body>
+</html>
