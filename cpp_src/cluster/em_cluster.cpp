@@ -1,5 +1,6 @@
 #include "cluster/em_cluster.hpp"
 #include "util.hpp"
+#include <cfloat>
 
 #include <iostream>
 
@@ -226,14 +227,16 @@ double em_cluster::iterate()
     {
         _cluster_estimators[i]->prepare_estimator();
         cluster_probs[i] /= _samples.size();
+
+        double avg_cluster_prob = 1.0 / _clusters.size();
+        cluster_probs[i] += 0.03 * (avg_cluster_prob - cluster_probs[i]);
     }
 
     for(samples_t::iterator it = _samples.begin(); it != _samples.end(); ++it)
     {
         sample_cluster_states_t & states( it->second.cluster_states);
 
-        // P(sample) = sum{ P(sample|class)}
-        double prob_sample = 0;
+        double max_lprob_sample_class = -DBL_MAX;
 
         for(size_t i = 0; i != states.size(); ++i)
         {
@@ -241,13 +244,22 @@ double em_cluster::iterate()
             states[i].prob_sample_class = \
                 _cluster_estimators[i]->estimate_sample(states[i].features);
 
-            prob_sample += states[i].prob_sample_class;
+            if(states[i].prob_sample_class > max_lprob_sample_class)
+                max_lprob_sample_class = states[i].prob_sample_class;
         }
 
-//        std::cout << "P(sample) " << prob_sample << std::endl;
+        // P(sample) = sum{ P(sample|class)}
+        // for each S, compute P(S | C) / P(S);
+        //   "divide" both (subtract in log-space) by a
+        //   constant factor to avoid numerical issues
+        double prob_sample = 0;
+        for(size_t i = 0; i != states.size(); ++i)
+        {
+            states[i].prob_sample_class = std::exp(
+                states[i].prob_sample_class - max_lprob_sample_class);
 
-        if(!prob_sample)
-            prob_sample = 1;
+            prob_sample += states[i].prob_sample_class;
+        }
 
         for(size_t i = 0; i != states.size(); ++i)
         {
@@ -262,7 +274,6 @@ double em_cluster::iterate()
 
 //            std::cout << cluster_probs[i] << " * " << states[i].prob_sample_class;
 //            std::cout << " / " << prob_sample << std::endl;
-
 
 //            std::cout << states[i].prob_class_sample << ", ";
         }

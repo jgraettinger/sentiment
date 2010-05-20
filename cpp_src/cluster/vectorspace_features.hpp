@@ -15,18 +15,6 @@ class sparse_vectorspace_features :
 public:
 
     typedef bind_ptr<sparse_vectorspace_features>::ptr_t ptr_t;
-
-    void normalize()
-    {
-        double norm = 0;
-        for(size_t i = 0; i != size(); ++i)
-            norm += (*this)[i].second * (*this)[i].second;
-
-        norm = 1.0 / std::sqrt(norm);
-
-        for(size_t i = 0; i != size(); ++i)
-            (*this)[i].second *= norm;
-    }
 };
 
 class dense_vectorspace_features :
@@ -36,18 +24,6 @@ class dense_vectorspace_features :
 public:
 
     typedef bind_ptr<dense_vectorspace_features>::ptr_t ptr_t;
-
-    void normalize()
-    {
-        double norm = 0;
-        for(size_t i = 0; i != size(); ++i)
-            norm += (*this)[i] * (*this)[i];
-
-        norm = 1.0 / std::sqrt(norm);
-
-        for(size_t i = 0; i != size(); ++i)
-            (*this)[i] *= norm;
-    }
 };
 
 };

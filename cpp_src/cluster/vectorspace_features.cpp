@@ -3,6 +3,8 @@
 #include "util.hpp"
 #include <boost/python.hpp>
 
+#include <iostream>
+
 namespace cluster {
 namespace bpl = boost::python;
 
@@ -25,20 +27,13 @@ public:
 
         feat.reserve(bpl::len(o));
 
-        double norm = 0;
         for(bpl::object f, iter = get_iterator(o); next(iter, f);)
         {
             unsigned feat_id = bpl::extract<unsigned>(f[0]);
             double feat_val = bpl::extract<double>(f[1]);
 
             feat.push_back( std::make_pair(feat_id, feat_val));
-            norm += feat_val * feat_val;
         }
-
-        // normalize to unit-length
-        norm = 1.0 / std::sqrt(norm);
-        for(unsigned i = 0; i != feat.size(); ++i)
-            feat[i].second *= norm;
 
         std::sort(feat.begin(), feat.end());
         return feat_ptr;
@@ -59,22 +54,15 @@ public:
         dense_vectorspace_features & feat(*feat_ptr);
 
         // call subclass featurize()
-        bpl::object o(this->get_override("_py_featurize")(s));
+        bpl::object o = this->get_override("_py_featurize")(s);
         feat.reserve(bpl::len(o));
 
-        double norm = 0;
         for(bpl::object f, iter = get_iterator(o); next(iter, f);)
         {
             double feat_val = bpl::extract<double>(f);
 
             feat.push_back(feat_val);
-            norm += feat_val * feat_val;
         }
-
-        // normalize to unit-length
-        norm = 1.0 / std::sqrt(norm);
-        for(unsigned i = 0; i != feat.size(); ++i)
-            feat[i] *= norm;
 
         return feat_ptr;
     };

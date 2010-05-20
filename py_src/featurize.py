@@ -1,4 +1,4 @@
-
+import math
 from cluster import sparse_vectorspace_featurizer
 from cluster import dense_vectorspace_featurizer
 
@@ -25,7 +25,8 @@ class TfIdfVectorFeaturizer(sparse_vectorspace_featurizer):
 
             feat[t_id] = feat.get(t_id, 0) + (1.0 / self._df[t_id])
 
-        return feat 
+        norm = 1.0 / sum(feat.values())
+        return [(i, j * norm) for i,j in feat.items()]
 
 class TfVectorFeaturizer(sparse_vectorspace_featurizer):
 
@@ -41,4 +42,5 @@ class TfVectorFeaturizer(sparse_vectorspace_featurizer):
 
             feat[t_id] = feat.get(t_id, 0) + 1.0
 
-        return feat
+        norm = 1.0 / sum(feat.values())
+        return [(i, j * norm) for i,j in feat.items()]
