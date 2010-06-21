@@ -10,6 +10,7 @@ void make_information_gain_selector_bindings()
         information_gain_selector::ptr_t, boost::noncopyable>(
         "information_gain_selector", bpl::init<>())
         .def("reset", &information_gain_selector::reset)
+        .def("sanity", &information_gain_selector::sanity)
         .def("add_observation", &information_gain_selector::add_observation)
         .def("get_information_gain", &information_gain_selector::get_information_gain);
 }

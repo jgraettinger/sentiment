@@ -14,7 +14,8 @@ class TestInformationGainSelector(unittest.TestCase):
             cluster.sparse_features({1: 1, 2: 1}), [0.9, 0.1])
         self.igain.add_observation(
             cluster.sparse_features({2: 1, 3: 1}), [0.1, 0.9])
-
+        
+        self.igain.sanity()
         print self.igain.get_information_gain()
 
     def test_bar(self):
@@ -32,5 +33,6 @@ class TestInformationGainSelector(unittest.TestCase):
                     (int(random.normalvariate(26, 3)), 1) for i in xrange(5))),
                     [0.1, 0.9]
             )
-        
+
+        self.igain.sanity()
         print sorted(self.igain.get_information_gain().items())
