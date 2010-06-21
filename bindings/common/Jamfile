@@ -1,0 +1,10 @@
+
+python-extension _common_conversions :
+    _common_conversions.cpp
+    /site-config//boost_python
+;
+
+install ext_dist :
+    _common_conversions
+    : <location>$(INSTALL)/common ;
+

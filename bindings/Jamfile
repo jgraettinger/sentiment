@@ -1,0 +1,15 @@
+
+project bindings
+    : requirements
+    <include>../cpp_src 
+    <include>.
+;
+
+install install :
+    :
+    <location>$(INSTALL)
+    ;
+
+build-project common ;
+build-project cluster ;
+

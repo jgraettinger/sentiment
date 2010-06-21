@@ -25,10 +25,8 @@ public:
 
     unigram_lm_estimator(const featurizer::ptr_t & f)
      : estimator(f),
-       _sample_count(0),
-       _sample_prob(0),
-       _mass(0),
-       _unk(0)
+       _prob_unk(1),
+       _alpha(0.04)
     { }
 
     /// Estimator interface
@@ -37,37 +35,55 @@ public:
     void reset_estimator()
     {
         _est.clear();
-        _sample_count = 0;
-        _sample_prob = 0;
-        _mass = 0;
-        _unk = 0;
+        _prob_unk = 1;
     }
 
     // train on sample & P(class | sample)
     void add_sample_probability(
         const sample_features::ptr_t & f, double prob_class_item)
     {
+        if(prob_class_item <= 0)
+            return;
+
         sparse_vectorspace_features & feat(
             dynamic_cast<sparse_vectorspace_features&>(*f));
 
         for(size_t i = 0; i != feat.size(); ++i)
         {
-            _est[feat[i].first] += prob_class_item * feat[i].second;
-            _mass += prob_class_item * feat[i].second;
+            est_t::iterator it = _est.find(feat[i].first);
+            double alpha = _alpha * prob_class_item;
+
+            if(it == _est.end())
+            {
+                _est[feat[i].first] = prob_class_item * feat[i].second;
+
+                _prob_unk = alpha * 1 + (1 - alpha) * _prob_unk;
+            }
+            else
+            {
+                it->second += prob_class_item * feat[i].second;
+
+                _prob_unk = alpha * 0 + (1 - alpha) * _prob_unk;
+            }
         }
 
-        _sample_prob += prob_class_item;
-        _sample_count += 1;
         return;
     }
 
     void prepare_estimator()
     {
-        // add <unk>
-        _unk = _sample_prob / _sample_count;
-        _mass += _unk;
+//        std::cout << "P(<unk>) == " << _prob_unk << std::endl;
 
-        double norm = 1.0 / _mass;
+        // add <unk>
+        double mass = _prob_unk;
+
+        for(est_t::iterator it = _est.begin();
+            it != _est.end(); ++it)
+        {
+            mass += it->second;
+        }
+
+        double norm = 1.0 / mass;
 
         for(est_t::iterator it = _est.begin();
             it != _est.end(); ++it)
@@ -75,7 +91,7 @@ public:
             it->second = std::log(it->second * norm);
         }
 
-        _unk = std::log(_unk * norm);
+        _prob_unk = std::log(_prob_unk * norm);
         return;
     }
 
@@ -93,11 +109,11 @@ public:
 
             if(it == _est.end())
             {
-                p_item += _unk;
+                p_item += (1.0 * _prob_unk);
                 continue;
             }
 
-            p_item += (it->second + it->second * 10.0) * feat[i].second;
+            p_item += (1.0 * it->second) * feat[i].second;
         }
         return p_item;
     }
@@ -106,10 +122,8 @@ private:
 
     typedef boost::unordered_map<unsigned, double> est_t;
 
-    double _sample_count;
-    double _sample_prob;
-    double _mass;
-    double _unk;
+    double _prob_unk;
+    double _alpha;
     est_t _est;
 };
 
@@ -157,7 +171,7 @@ public:
             it != _centroid.end(); ++it)
         {
             // amplify signal in the model
-            //it->second = std::pow(it->second, 1.1);
+            it->second = std::pow(it->second, 1.1);
             norm += it->second;
         }
 

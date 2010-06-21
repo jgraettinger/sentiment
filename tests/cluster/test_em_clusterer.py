@@ -119,20 +119,21 @@ class TestEMClusterer(unittest.TestCase):
 
         for cls, cnt in enumerate([100, 50, 25]):
 
-            for i in xrange(cnt):
-                word_cnt = random.randint(8, 100)
+            for doc_ind in xrange(cnt):
+                word_cnt = random.randint(20, 100)
 
                 terms = []
-                for j in xrange(word_cnt * 0.2):
+                for j in xrange(int(word_cnt * 0.7)):
                     terms.append(int(random.expovariate(1.0 / 10)) * 3 + cls)
-                for j in xrange(word_cnt * 0.8):
+                for j in xrange(int(word_cnt * 0.3)):
                     terms.append(int(random.expovariate(1.0 / 30)))
 
-                docs['d_c%d_%d' % (cls, i)] = (
-                    ' '.join(str(i) for i in terms),
-                    dict((c, random.random()) for c in clusters))
+                docs['d_c%d_%d' % (cls, doc_ind)] = ' '.join(str(i) for i in terms)
 
         feat = TfVectorFeaturizer()
+
+#        for d_uid, d_txt in sorted(docs.iteritems()):
+#            feat.accumulate_doc_frequency(d_txt)
 
         clus = cluster.em_cluster()
 
@@ -140,29 +141,31 @@ class TestEMClusterer(unittest.TestCase):
             clus.add_cluster(c_uid,
                 cluster.unigram_lm_estimator(feat))
 
-        for d_uid, (d_txt, d_mem) in docs.iteritems():
+        c_mem = {'a': 0.0, 'b': 0.0, 'c': 0.0}
+
+        for d_uid, d_txt in sorted(docs.iteritems()):
 
             if d_uid == 'd_c0_0':
                 clus.add_sample(
-                    cluster.document_sample(d_uid, '', d_txt), d_mem, {'a': 1.0})
+                    cluster.document_sample(d_uid, '', d_txt), c_mem, {'a': 1.0})
             elif d_uid == 'd_c1_0':
                 clus.add_sample(
-                    cluster.document_sample(d_uid, '', d_txt), d_mem, {'b': 1.0})
+                    cluster.document_sample(d_uid, '', d_txt), c_mem, {'b': 1.0})
             elif d_uid == 'd_c2_0':
                 clus.add_sample(
-                    cluster.document_sample(d_uid, '', d_txt), d_mem, {'c': 1.0})
+                    cluster.document_sample(d_uid, '', d_txt), c_mem, {'c': 1.0})
             else:
                 clus.add_sample(
-                    cluster.document_sample(d_uid, '', d_txt), d_mem, {})
+                    cluster.document_sample(d_uid, '', d_txt), c_mem, {})
 
-        for i in xrange(50):
+        for i in xrange(300):
             clus.iterate()
 
         counts = {}
-        for d_uid, (d_txt, d_mem) in sorted(docs.items()):
+        for d_uid, d_txt in sorted(docs.items()):
             cls = d_uid.split('_')[1]
 
-            print "%s %r:\r\n\t%r" % (d_uid, d_txt, clus.get_sample_probabilities(d_uid))
+#            print "%s %r:\r\n\t%r" % (d_uid, d_txt, clus.get_sample_probabilities(d_uid))
 
             m = max((j,i) for (i,j) in \
                 clus.get_sample_probabilities(d_uid).items())
