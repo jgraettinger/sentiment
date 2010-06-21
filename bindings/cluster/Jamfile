@@ -8,3 +8,5 @@ install ext_dist :
     _cluster
     : <location>$(INSTALL)/cluster ;
 
+build-project feature_selection ;
+

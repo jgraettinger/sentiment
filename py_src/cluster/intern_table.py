@@ -8,7 +8,7 @@ class InternTable(object):
         self._next_id = 0
         return
     
-    def add_reference(self, str):
+    def get_id(self, str):
 
         if str not in self._str_to_id:
             self._str_to_id[str] = self._next_id
@@ -16,13 +16,12 @@ class InternTable(object):
             self._id_to_str[self._next_id] = str
             self._next_id += 1
 
-        id = self._str_to_id[str]
+        return self._str_to_id[str]
+
+    def add_reference(self, id):
         self._id_to_cnt[id] += 1
-        return id
 
     def drop_reference(self, id):
-        
-        assert id in self._id_to_str
 
         if self._id_to_cnt[id] > 1:
             self._id_to_cnt[id] -= 1
@@ -32,10 +31,6 @@ class InternTable(object):
         del self._str_to_id[str]
         del self._id_to_str[id]
         del self._id_to_cnt[id]
-        return
-
-    def get_id(self, str):
-        return self._str_to_id[str]
 
     def get_reference_count(self, id):
         return self._id_to_cnt[id]

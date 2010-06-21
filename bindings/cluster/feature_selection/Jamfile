@@ -1,0 +1,10 @@
+
+python-extension _feature_selection :
+    [ glob *.cpp ]
+    /site-config//boost_python
+;
+
+install ext_dist :
+    _feature_selection
+    : <location>$(INSTALL)/cluster/feature_selection ;
+

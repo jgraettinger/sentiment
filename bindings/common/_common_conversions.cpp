@@ -36,5 +36,13 @@ BOOST_PYTHON_MODULE(_common_conversions)
     pair_to_python< std::pair<double, bool> >::register_conversion();
     pair_from_python< std::pair<double, bool> >::register_conversion();
 
+    // feature_selection::selector_mixin
+    vector_to_python< std::vector< std::pair<unsigned, double> >
+        >::register_conversion();
+    vector_from_python< std::vector< std::pair<unsigned, double> >
+        >::register_conversion();
+
+    pair_to_python< std::pair<unsigned, double> >::register_conversion();
+    pair_from_python< std::pair<unsigned, double> >::register_conversion();
 }
 
