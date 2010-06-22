@@ -1,5 +1,6 @@
 #include "cluster/em_clusterer.hpp"
-
+#include "cluster/vector_ops.hpp"
+#include <boost/unordered_set.hpp>
 #include <cfloat>
 #include <cmath>
 #include <numeric>
@@ -15,8 +16,48 @@ template<
     typename Estimator,
     typename FeatureSelector
 >
+void em_clusterer<Estimator, FeatureSelector>::sample_t::norm_class_probs()
+{
+    // compute sum{ P(class | sample) } (for normalization)
+    double soft_norm = 0;
+    double hard_norm = 0;
+
+    for(unsigned i = 0; i != prob_class_sample.size(); ++i)
+    {
+        if(is_hard[i])
+            hard_norm += prob_class_sample[i];
+        else
+            soft_norm += prob_class_sample[i];
+    }
+
+    if(soft_norm && hard_norm < 1)
+    {
+        soft_norm = (1 - hard_norm) / soft_norm;
+        hard_norm = 1;
+    }
+    else if(hard_norm)
+    {
+        soft_norm = 0;
+        hard_norm = 1 / hard_norm;
+    }
+    else
+    {
+        soft_norm = hard_norm = 1;
+    }
+
+    for(unsigned i = 0; i != prob_class_sample.size(); ++i)
+        prob_class_sample[i] *= is_hard[i] ? hard_norm : soft_norm;
+
+    return;
+}
+
+
+template<
+    typename Estimator,
+    typename FeatureSelector
+>
 void em_clusterer<Estimator, FeatureSelector>::add_cluster(
-    const std::string & uid)
+    const std::string & uid, typename Estimator::ptr_t estimator)
 {
     vector<string>::iterator c_it = lower_bound(
         _clusters.begin(), _clusters.end(), uid);
@@ -26,21 +67,21 @@ void em_clusterer<Estimator, FeatureSelector>::add_cluster(
 
     unsigned ind = distance(_clusters.begin(), c_it);
 
-    _clusters.insert(_clusters.begin() + ind, uid);
-    _estimators.insert(_estimators.begin() + ind,
-        typename Estimator::ptr_t(new Estimator()));
+    _clusters.insert(_clusters.begin() + ind,     uid);
+    _estimators.insert(_estimators.begin() + ind, estimator);
 
     for(typename samples_t::iterator s_it = _samples.begin();
         s_it != _samples.end(); ++s_it)
     {
         sample_t & sample(s_it->second);
 
-        typename sample_t::prob_t prob;
-        prob.sample_class = 0;
-        prob.class_sample = 0;
-
-        sample.prob.insert(sample.prob.begin() + ind, prob);
-        sample.hard.insert(sample.hard.begin() + ind, false);
+        // no need to normalize cluster probs (we're adding 0)
+        sample.prob_sample_class.insert(
+            sample.prob_sample_class.begin() + ind, 0);
+        sample.prob_class_sample.insert(
+            sample.prob_class_sample.begin() + ind, 0);
+        sample.is_hard.insert(
+            sample.is_hard.begin() + ind, false);
     }
     return;
 }
@@ -68,8 +109,12 @@ void em_clusterer<Estimator, FeatureSelector>::drop_cluster(
     {
         sample_t & sample(s_it->second);
 
-        sample.prob.erase(sample.prob.begin() + ind);
-        sample.hard.erase(sample.hard.begin() + ind);
+        sample.prob_sample_class.erase(sample.prob_sample_class.begin() + ind);
+        sample.prob_class_sample.erase(sample.prob_class_sample.begin() + ind);
+        sample.is_hard.erase(sample.is_hard.begin() + ind);
+
+        // renormalize P(class | sample) to 1
+        sample.norm_class_probs();
     }
     return;
 }
@@ -87,15 +132,14 @@ void em_clusterer<Estimator, FeatureSelector>::add_sample(
         throw runtime_error("duplicate sample UID " + uid);
 
     sample_t & sample( _samples[uid]);
-    sample.features = feat;
-
-    typename sample_t::prob_t prob;
-    prob.sample_class = 0;
-    prob.class_sample = 0;
 
     // init probability state
-    sample.prob.resize(_clusters.size(), prob);
-    sample.hard.resize(_clusters.size(), false);
+    sample.prob_class_sample.resize(_clusters.size(), 0);
+    sample.prob_sample_class.resize(_clusters.size(), 0);
+    sample.is_hard.resize(_clusters.size(), false);
+
+    sample.features = feat;
+    sample.filtered_features = feat;
 
     // iterate over (cluster-uid, (P(class | sample), is-hard))
     for(sample_cluster_state_t::const_iterator s_it = cluster_probs.begin();
@@ -109,9 +153,11 @@ void em_clusterer<Estimator, FeatureSelector>::add_sample(
 
         unsigned ind = distance(_clusters.begin(), c_it);
 
-        sample.prob[ind].class_sample = s_it->second.first;
-        sample.hard[ind] = s_it->second.second;
+        sample.prob_class_sample[ind] = s_it->second.first;
+        sample.is_hard[ind] = s_it->second.second;
     }
+
+    sample.norm_class_probs();
     return;
 }
 
@@ -144,149 +190,188 @@ em_clusterer<Estimator, FeatureSelector>::get_sample_probabilities(
 
     sample_t & sample = _samples[uid];
 
-    double hard_norm, soft_norm;
-    compute_prob_norms(sample, hard_norm, soft_norm);
-
     sample_cluster_state_t probs;
 
     vector<string>::const_iterator it1 = _clusters.begin();
-    typename sample_t::probs_t::const_iterator it2 = sample.prob.begin();
-    vector<bool>::const_iterator it3 = sample.hard.begin();
+    vector<double>::const_iterator it2 = sample.prob_class_sample.begin();
+    vector<bool>::const_iterator   it3 = sample.is_hard.begin();
 
     for(; it1 != _clusters.end(); ++it1, ++it2, ++it3)
     {
-        probs[*it1] = make_pair(
-            it2->class_sample * (
-                *it3 ? hard_norm : soft_norm), *it3);
+        probs[*it1] = make_pair(*it2, *it3);
     }
     return probs;
 }
 
-template<
-    typename Estimator,
-    typename FeatureSelector
->
-void em_clusterer<Estimator, FeatureSelector>::compute_prob_norms(
-    const sample_t & sample,
-    double & hard_norm, double & soft_norm)
+
+template<typename Features>
+typename Features::ptr_t filter_and_normalize_features(
+    const Features & feat, const boost::unordered_set<unsigned> & fset)
 {
-    // compute sum{ P(class | sample) } (for normalization)
-    soft_norm = 0; hard_norm = 0;
-    for(size_t i = 0; i != sample.prob.size(); ++i)
+    typename Features::mutable_ptr_t fptr;
+
+    Features & norm_feat(*fptr);
+    norm_feat.reserve(feat.size());
+
+    for(unsigned i = 0; i != feat.size(); ++i)
     {
-        if(sample.hard[i])
-            hard_norm += sample.prob[i].class_sample;
-        else
-            soft_norm += sample.prob[i].class_sample;
+        // is this a selected feature?
+        if(fset.find(feat[i].first) != fset.end())
+        {
+            norm_feat.push_back(feat[i]);
+        }
     }
-    if(soft_norm && hard_norm < 1)
-    {
-        soft_norm = (1 - hard_norm) / soft_norm;
-        hard_norm = 1;
-    }
-    else if(hard_norm)
-    {
-        soft_norm = 0;
-        hard_norm = 1 / hard_norm;
-    }
-    else
-    {
-        soft_norm = hard_norm = 1;
-    }
-    return;
+
+    vector_ops::normalize_L1(norm_feat);
+    return fptr;
 }
 
 template<
     typename Estimator,
     typename FeatureSelector
 >
-double em_clusterer<Estimator, FeatureSelector>::iterate()
+unsigned em_clusterer<Estimator, FeatureSelector>::feature_selection()
+{
+    _feature_selector->reset();
+
+    // prime feature-selection by passing current
+    //  features & class membership observations
+    for(typename samples_t::const_iterator it = _samples.begin();
+        it != _samples.end(); ++it)
+    {
+        const sample_t & sample(it->second);
+
+        // feed features & P(class | sample) to feature-selector
+        _feature_selector->add_observation(
+            *sample.features, sample.prob_class_sample);
+    }
+
+    // query for selected features, & accompanying statistics
+    std::vector< std::pair<unsigned, double> > selected_features = \
+        _feature_selector->select_features();
+
+    // index feature id's
+    boost::unordered_set<unsigned> feature_set;
+    for(unsigned i = 0; i != selected_features.size(); ++i)
+        feature_set.insert(selected_features[i].first);
+
+    // generate filtered & normalized features for each sample
+    for(typename samples_t::iterator it = _samples.begin();
+        it != _samples.end(); ++it)
+    {
+        sample_t & sample(it->second);
+
+        sample.filtered_features = filter_and_normalize_features(
+            *sample.features, feature_set);
+    }
+
+    // return number of active features
+    return feature_set.size();
+}
+
+template<
+    typename Estimator,
+    typename FeatureSelector
+>
+double em_clusterer<Estimator, FeatureSelector>::expect_and_maximize()
 {
     unsigned num_clusters = _clusters.size();
 
     for(unsigned i = 0; i != num_clusters; ++i)
         _estimators[i]->reset();
 
-    vector<double> cluster_probs(num_clusters, 0);
+    // cluster priors P(c)
+    vector<double> cluster_prob(num_clusters, 0);
 
-    for(typename samples_t::const_iterator it = _samples.begin();
-        it != _samples.end(); ++it)
+    /// Expectation Step (part 1: training)
     {
-        const sample_t & sample( it->second);
-
-        double hard_norm, soft_norm;
-        compute_prob_norms(sample, hard_norm, soft_norm);
-
-        // feed features & P(class | sample) to estimators
-        for(size_t i = 0; i != num_clusters; ++i)
+        for(typename samples_t::const_iterator it = _samples.begin();
+            it != _samples.end(); ++it)
         {
-            double prob_class_sample = sample.prob[i].class_sample * (
-                sample.hard[i] ? hard_norm : soft_norm);
+            const sample_t & sample( it->second);
 
-            _estimators[i]->add_observation(
-                sample.features, prob_class_sample);
+            // feed features & P(class | sample) to estimators
+            for(size_t i = 0; i != num_clusters; ++i)
+            {
+                _estimators[i]->add_observation(
+                    *sample.filtered_features, sample.prob_class_sample[i]);
 
-            // P(c) = sum{ P(c|s) for s in S}
-            cluster_probs[i] += prob_class_sample;
+                // while we're here, sum cluster mass
+                // P(c) = sum{ P(c|s) for s in S}
+                cluster_prob[i] += sample.prob_class_sample[i];
+            }
         }
     }
 
-    double cluster_pnorm = 1.0 / std::accumulate(
-        cluster_probs.begin(), cluster_probs.end(), 0);
-
-    for(size_t i = 0; i != num_clusters; ++i)
+    /// Expectation Step (part 2: cluster priors)
     {
-        cluster_probs[i] *= cluster_pnorm;
+        vector_ops::normalize_L1(cluster_prob);
 
-        // shift probability slightly back to even
-        double avg_cluster_prob = 1.0 / num_clusters;
-        cluster_probs[i] += 0.02 * (avg_cluster_prob - cluster_probs[i]);
-
-        _estimators[i]->prepare_estimator();
+        for(size_t i = 0; i != num_clusters; ++i)
+        {
+            // shift probability slightly back to even
+            double avg_cluster_prob = 1.0 / num_clusters;
+            cluster_prob[i] += 0.02 * (avg_cluster_prob - cluster_prob[i]);
+        }
     }
+
+    for(unsigned i = 0; i != num_clusters; ++i)
+            _estimators[i]->prepare_estimator();
 
     for(typename samples_t::iterator it = _samples.begin();
         it != _samples.end(); ++it)
     {
         sample_t & sample( it->second);
 
-        double lprob_norm = -DBL_MAX;
-        for(size_t i = 0; i != num_clusters; ++i)
+        /// Expectation Step (part 3: decode P(sample | class))
         {
-            // query estimator for log P(sample|class)
-            sample.prob[i].sample_class = \
-                _estimators[i]->estimate(sample.features);
+            for(size_t i = 0; i != num_clusters; ++i)
+            {
+                // query estimator for log P(sample|class)
+                sample.prob_sample_class[i] = \
+                    _estimators[i]->estimate(*sample.filtered_features);
+            }
 
-            // track largest log P(sample | class)
-            // TODO: Want c++0x lambdas!
-            if(sample.prob[i].sample_class > lprob_norm)
-                lprob_norm = sample.prob[i].sample_class;
-        }
+            // track the total generative probability of the sample;
+            //  useful for identifying samples which are poorly
+            //  explained by the current model / clusters
+            sample.log_prob_sample = std::accumulate(
+                sample.prob_sample_class.begin(),
+                sample.prob_sample_class.end(), 0);
 
-        double prob_sample = 0;
-        for(size_t i = 0; i != num_clusters; ++i)
-        {
+            // largest log P(sample | class)
+            double lprob_norm = *std::max(
+                sample.prob_sample_class.begin(),
+                sample.prob_sample_class.end());
+
             // for numeric stability, subtract (divide in log space)
             //  a constant factor, which preserves relative probabilities
             //  but shifts the largest probability up to 1
-            sample.prob[i].sample_class = std::exp(
-                sample.prob[i].sample_class - lprob_norm);
+            for(size_t i = 0; i != num_clusters; ++i)
+            {
+                sample.prob_sample_class[i] = std::exp(
+                    sample.prob_sample_class[i] - lprob_norm);
+            }
 
-            prob_sample += sample.prob[i].sample_class;
+            // normalize to reflect P(sample | class) / P(sample)
+            vector_ops::normalize_L1(sample.prob_sample_class);
         }
-
+        
+        /// Maximization Step
         for(size_t i = 0; i != num_clusters; ++i)
         {
-            if(sample.hard[i])
+            if(sample.is_hard[i])
                 continue;
 
             // P(class|sample) = P(class) * P(sample|class) / P(sample)
-            sample.prob[i].class_sample = \
-                cluster_probs[i] * sample.prob[i].sample_class / prob_sample;
+            sample.prob_class_sample[i] = \
+                cluster_prob[i] * sample.prob_sample_class[i];
         }
+        sample.norm_class_probs();
     }
     return 0;
 }
+
 
 };
 

@@ -25,9 +25,12 @@ public:
 
     typedef std::vector< std::pair<unsigned, double> > feature_stat_t;
 
-    information_gain_selector(unsigned max_features, double max_mass_ratio)
+    information_gain_selector(
+        unsigned min_features,
+        double max_mass_ratio,
+        unsigned max_features)
      : selector_mixin<information_gain_selector>(
-        max_features, max_mass_ratio)
+        min_features, max_features, max_mass_ratio)
     { }
 
     feature_stat_t derive_statistics(double & stat_sum)

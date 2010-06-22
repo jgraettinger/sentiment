@@ -16,8 +16,14 @@ public:
 
     typedef std::vector< std::pair<unsigned, double> > feature_stat_t;
 
-    selector_mixin(unsigned max_features, double max_mass_ratio)
-        : _max_features(max_features), _max_mass_ratio(max_mass_ratio)
+    selector_mixin(
+        unsigned min_features,
+        double max_mass_ratio,
+        unsigned max_features)
+     : 
+        _min_features(min_features),
+        _max_mass_ratio(max_mass_ratio),
+        _max_features(max_features)
     { }
 
     feature_stat_t select_features()
@@ -47,7 +53,8 @@ public:
             while(cur_count != next_count)
             {
                 cur_sum += feat_stats[cur_count++].second;
-                if((cur_sum / stat_sum) > _max_mass_ratio)
+                if(cur_count >= _min_features && \
+                  (cur_sum / stat_sum) > _max_mass_ratio)
                 {
                     // we've reached the target ratio
                     feat_stats.erase(
@@ -73,8 +80,9 @@ private:
         { return f1.second > f2.second; }
     };
 
-    unsigned _max_features;
+    unsigned _min_features;
     double _max_mass_ratio;
+    unsigned _max_features;
 };
 
 };

@@ -35,7 +35,7 @@ public:
     }
 
     void add_observation(
-        const typename features_t::ptr_t & feat,
+        const features_t & feat,
         const vec_flt_t & class_weight)
     {
         // first sample?
@@ -60,8 +60,8 @@ public:
         double feature_mass = 0;
 
         // collect observations for p(c & f)
-        for(typename features_t::const_iterator it = feat->begin();
-            it != feat->end(); ++it)
+        for(typename features_t::const_iterator it = feat.begin();
+            it != feat.end(); ++it)
         {
             vec_flt_t & cur_class_mass = _feature_class_mass[it->first];
 
@@ -81,8 +81,8 @@ public:
         }
 
         // collect observations for p(f)
-        for(typename features_t::const_iterator it = feat->begin();
-            it != feat->end(); ++it)
+        for(typename features_t::const_iterator it = feat.begin();
+            it != feat.end(); ++it)
         {
             _feature_mass[it->first] += it->second * class_mass;
         }

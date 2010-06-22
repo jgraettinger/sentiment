@@ -22,7 +22,7 @@ void make_information_gain_selector_bindings()
 {
     bpl::class_<information_gain_selector,
         information_gain_selector::ptr_t, boost::noncopyable>(
-        "information_gain_selector", bpl::init<unsigned, double>())
+        "information_gain_selector", bpl::init<unsigned, double, unsigned>())
         .def("reset", &information_gain_selector::reset)
         .def("add_observation", &information_gain_selector::add_observation)
         .def("derive_statistics", &py_derive_statistics)

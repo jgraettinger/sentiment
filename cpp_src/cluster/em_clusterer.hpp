@@ -25,10 +25,13 @@ public:
         std::pair<double, bool>
     > sample_cluster_state_t;
 
-    em_clusterer() {}
+    em_clusterer(typename FeatureSelector::ptr_t feature_selector)
+      : _feature_selector(feature_selector)
+    { }
 
     void add_cluster(
-        const std::string & cluster_uid);
+        const std::string & cluster_uid,
+        typename Estimator::ptr_t estimator);
 
     void drop_cluster(
         const std::string & cluster_uid);
@@ -45,39 +48,38 @@ public:
     sample_cluster_state_t get_sample_probabilities(
         const std::string & sample_uid);
 
-    double iterate();
+    unsigned feature_selection();
+
+    double expect_and_maximize();
 
 private:
 
     struct sample_t {
 
-        struct prob_t
-        {
-            // P(sample | cluster)
-            double sample_class;
-            // P(cluster | sample)
-            double class_sample;
-        };
+        // P(sample | class)
+        std::vector<double> prob_sample_class;
 
-        typedef std::vector<prob_t> probs_t;
-
-        features_ptr_t features;
-
-        probs_t prob;
+        // P(class | sample)
+        std::vector<double> prob_class_sample;
 
         // whether P(cluster|sample) is 'hard'
-        std::vector<bool> hard;
+        std::vector<bool> is_hard;
+
+        features_ptr_t features;
+        features_ptr_t filtered_features;
+
+        // unnormalized sum{ P(sample | class) for class in C}
+        double log_prob_sample;
+
+        void norm_class_probs();
     };
 
     typedef std::map<std::string, sample_t> samples_t;
 
-    void compute_prob_norms(
-        const sample_t & sample,
-        double & hard_norm, double & soft_norm);
-
     std::vector<std::string> _clusters;
     std::vector<typename Estimator::ptr_t> _estimators;
 
+    typename FeatureSelector::ptr_t _feature_selector;
     samples_t _samples;
 };
 
