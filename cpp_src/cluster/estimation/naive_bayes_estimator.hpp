@@ -5,8 +5,11 @@
 #include "cluster/sparse_features.hpp"
 #include <boost/unordered_map.hpp>
 #include <boost/shared_ptr.hpp>
+#include <cfloat>
 
 namespace cluster
+{
+namespace estimation
 {
 
 class naive_bayes_estimator
@@ -17,9 +20,9 @@ public:
 
     typedef sparse_features features_t;
 
-    naive_bayes_estimator()
+    naive_bayes_estimator(double alpha)
      : _prob_unk(1),
-       _alpha(0.04)
+       _alpha(alpha)
     { }
 
     void reset()
@@ -112,6 +115,7 @@ private:
     est_t _est;
 };
 
+};
 };
 
 #endif

@@ -1,8 +1,13 @@
 
+import cluster.featurization
+import cluster.normalization
+import cluster.estimation
+import cluster.feature_selection
+
+import bootstrap
+
 import urllib
 import random
-import featurize
-import cluster
 import sys
 import re
 import os
@@ -11,16 +16,7 @@ if len(sys.argv) != 2:
     print "Usage: %s /path/to/dataset" % sys.argv[0]
     sys.exit(-1)
 
-split_chars = """\r\n\t ~`!@#$%^&*()_-+={[}]|\:;"'<,>.?/"""
-re_split = re.compile('\\' + '|\\'.join(split_chars))
-
 cmem_empty = {'pos': 0, 'neg': 0}
-
-def normalize_text(text):
-    text = urllib.unquote(text)
-    text = ' '.join(t for t in text.split() if not t.startswith('http') and not t.startswith('@'))
-    text = ' '.join(t for t in re_split.split(text.lower()) if t and t != 'rt')
-    return text
 
 def iterate_docs(relative_path, klass):
 
@@ -30,57 +26,71 @@ def iterate_docs(relative_path, klass):
         subdoc_re.finditer(
             open(os.path.join(sys.argv[1], relative_path)
                 ).read())):
-        yield '%s_%d' % (klass, ind), normalize_text(m.group(1))
+        yield '%s_%04d' % (klass, ind), m.group(1)
 
+inj = bootstrap.bootstrap()
+intern_tbl = inj.get_instance(cluster.featurization.InternTable)
+normalizer = inj.get_instance(cluster.normalization.Normalizer)
+featurizer = inj.get_instance(cluster.featurization.Featurizer)
+feat_selector = inj.get_instance(cluster.feature_selection.FeatureSelector)
 
-feat = cluster.cached_featurizer(
-    featurize.TfVectorFeaturizer())
+#### Initialize
+clus = inj.get_instance(cluster.Clusterer)
 
-clus = cluster.em_cluster()
 clus.add_cluster('pos',
-    cluster.unigram_lm_estimator(feat))
+    inj.get_instance(cluster.estimation.Estimator))
 clus.add_cluster('neg',
-    cluster.unigram_lm_estimator(feat))
+    inj.get_instance(cluster.estimation.Estimator))
 
-pos_iter = iterate_docs('all_pos.txt', 'pos')
-neg_iter = iterate_docs('all_neg.txt', 'neg')
+pos_docs, neg_docs = set(), set()
 
-docs = set()
-random.seed(32)
+#### Train
+for ind, (doc_uid, doc_content) in enumerate(iterate_docs('all_pos.txt', 'pos')):
+    doc_feats = featurizer.featurize( normalizer.normalize(doc_content))
 
-for doc_uid, doc_content in pos_iter:
+    pos_docs.add( doc_uid)
 
-    h_mem = {}
-    if not random.randint(0, 20):
-        h_mem = {'pos': 1}
+    if ind < 5:
+        clus.add_sample(doc_uid, doc_feats, {'pos': (1, 1)})
+    else:
+        clus.add_sample(doc_uid, doc_feats, {'pos': (1, 0)})
 
-    clus.add_sample(
-        cluster.document_sample(doc_uid, '', doc_content),
-        {'neg': 0, 'pos': 0}, h_mem)
-    docs.add(doc_uid)
+for ind, (doc_uid, doc_content) in enumerate(iterate_docs('all_neg.txt', 'neg')):
+    doc_feats = featurizer.featurize( normalizer.normalize(doc_content))
 
-for doc_uid, doc_content in neg_iter:
+    neg_docs.add( doc_uid)
 
-    h_mem = {}
-    if not random.randint(0, 20):
-        h_mem = {'neg': 1}
+    if ind < 5:
+        clus.add_sample(doc_uid, doc_feats, {'neg': (1, 1)})
+    else:
+        clus.add_sample(doc_uid, doc_feats, {'neg': (1, 0)})
 
-    clus.add_sample(
-        cluster.document_sample(doc_uid, '', doc_content),
-        {'neg': 0, 'pos': 0}, h_mem)
-    docs.add(doc_uid)
+#### Iterate
 
-for i in xrange(10):
-    clus.iterate()
+for i in xrange(15):
+    feat_count =  clus.feature_selection()
+    clus.expect_and_maximize()
 
-counts = {}
-for d_uid in sorted(docs):
-    cls = d_uid.split('_')[0]
+    #### Decode
+    score = {'pos-pos': 0, 'pos-neg': 0, 'neg-pos': 0, 'neg-neg': 0}
 
-    m = max((j,i) for (i,j) in \
-        clus.get_sample_probabilities(d_uid).items())
+    for pos_doc in pos_docs:
 
-    key = '%s-%s' % (cls, m[1])
-    counts[key] = counts.get(key, 0) + 1
+        doc_probs = clus.get_sample_probabilities(pos_doc)
 
-print counts
+        if doc_probs['pos'][0] > doc_probs['neg'][0]:
+            score['pos-pos'] += 1
+        else:
+            score['pos-neg'] += 1
+
+    for neg_doc in neg_docs:
+
+        doc_probs = clus.get_sample_probabilities(neg_doc)
+
+        if doc_probs['pos'][0] > doc_probs['neg'][0]:
+            score['neg-pos'] += 1
+        else:
+            score['neg-neg'] += 1
+
+    print "Feature count: %d, Scores: %r" % (feat_count, score)
+

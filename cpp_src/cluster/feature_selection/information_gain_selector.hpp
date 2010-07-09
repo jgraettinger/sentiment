@@ -4,6 +4,7 @@
 
 #include "cluster/feature_selection/maximum_likelihood_mixin.hpp"
 #include "cluster/feature_selection/selector_mixin.hpp"
+#include "cluster/feature_selection/filter_mixin.hpp"
 #include "cluster/sparse_features.hpp"
 #include <boost/shared_ptr.hpp>
 #include <cmath>
@@ -17,7 +18,8 @@ class information_gain_selector;
 
 class information_gain_selector :
     public selector_mixin<information_gain_selector>,
-    public maximum_likelihood_mixin<sparse_features>
+    public maximum_likelihood_mixin<sparse_features>,
+    public filter_mixin<information_gain_selector, sparse_features>
 {
 public:
 
@@ -28,9 +30,12 @@ public:
     information_gain_selector(
         unsigned min_features,
         double max_mass_ratio,
-        unsigned max_features)
+        unsigned max_features,
+        double class_smoothing_factor)
      : selector_mixin<information_gain_selector>(
-        min_features, max_features, max_mass_ratio)
+        min_features, max_mass_ratio, max_features),
+       maximum_likelihood_mixin<sparse_features>(
+        class_smoothing_factor)
     { }
 
     feature_stat_t derive_statistics(double & stat_sum)

@@ -1,0 +1,10 @@
+
+python-extension _estimation :
+    [ glob *.cpp ]
+    /site-config//boost_python
+;
+
+install ext_dist :
+    _estimation
+    : <location>$(INSTALL)/cluster/estimation ;
+

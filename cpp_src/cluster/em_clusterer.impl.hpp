@@ -6,6 +6,7 @@
 #include <numeric>
 #include <algorithm>
 #include <stdexcept>
+
 #include <iostream>
 
 namespace cluster
@@ -203,29 +204,6 @@ em_clusterer<Estimator, FeatureSelector>::get_sample_probabilities(
     return probs;
 }
 
-
-template<typename Features>
-typename Features::ptr_t filter_and_normalize_features(
-    const Features & feat, const boost::unordered_set<unsigned> & fset)
-{
-    typename Features::mutable_ptr_t fptr;
-
-    Features & norm_feat(*fptr);
-    norm_feat.reserve(feat.size());
-
-    for(unsigned i = 0; i != feat.size(); ++i)
-    {
-        // is this a selected feature?
-        if(fset.find(feat[i].first) != fset.end())
-        {
-            norm_feat.push_back(feat[i]);
-        }
-    }
-
-    vector_ops::normalize_L1(norm_feat);
-    return fptr;
-}
-
 template<
     typename Estimator,
     typename FeatureSelector
@@ -246,14 +224,7 @@ unsigned em_clusterer<Estimator, FeatureSelector>::feature_selection()
             *sample.features, sample.prob_class_sample);
     }
 
-    // query for selected features, & accompanying statistics
-    std::vector< std::pair<unsigned, double> > selected_features = \
-        _feature_selector->select_features();
-
-    // index feature id's
-    boost::unordered_set<unsigned> feature_set;
-    for(unsigned i = 0; i != selected_features.size(); ++i)
-        feature_set.insert(selected_features[i].first);
+    unsigned feat_count = _feature_selector->prepare_selector();
 
     // generate filtered & normalized features for each sample
     for(typename samples_t::iterator it = _samples.begin();
@@ -261,12 +232,12 @@ unsigned em_clusterer<Estimator, FeatureSelector>::feature_selection()
     {
         sample_t & sample(it->second);
 
-        sample.filtered_features = filter_and_normalize_features(
-            *sample.features, feature_set);
+        sample.filtered_features = \
+            _feature_selector->filter_features(*sample.features);
     }
 
     // return number of active features
-    return feature_set.size();
+    return feat_count;
 }
 
 template<
@@ -307,12 +278,16 @@ double em_clusterer<Estimator, FeatureSelector>::expect_and_maximize()
     {
         vector_ops::normalize_L1(cluster_prob);
 
+        std::cout << "cluster priors: ";
         for(size_t i = 0; i != num_clusters; ++i)
         {
             // shift probability slightly back to even
             double avg_cluster_prob = 1.0 / num_clusters;
             cluster_prob[i] += 0.02 * (avg_cluster_prob - cluster_prob[i]);
+
+            std::cout << cluster_prob[i] << ", ";
         }
+        std::cout << std::endl;
     }
 
     for(unsigned i = 0; i != num_clusters; ++i)
@@ -340,7 +315,7 @@ double em_clusterer<Estimator, FeatureSelector>::expect_and_maximize()
                 sample.prob_sample_class.end(), 0);
 
             // largest log P(sample | class)
-            double lprob_norm = *std::max(
+            double lprob_norm = *std::max_element(
                 sample.prob_sample_class.begin(),
                 sample.prob_sample_class.end());
 
@@ -356,7 +331,7 @@ double em_clusterer<Estimator, FeatureSelector>::expect_and_maximize()
             // normalize to reflect P(sample | class) / P(sample)
             vector_ops::normalize_L1(sample.prob_sample_class);
         }
-        
+
         /// Maximization Step
         for(size_t i = 0; i != num_clusters; ++i)
         {

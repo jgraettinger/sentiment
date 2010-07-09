@@ -5,6 +5,8 @@
 #include <boost/unordered_map.hpp>
 #include <vector>
 #include <numeric>
+#include <cfloat>
+
 
 namespace cluster
 {
@@ -22,7 +24,8 @@ public:
     typedef boost::unordered_map<unsigned, vec_flt_t> vec_flt_map_t;
     typedef boost::unordered_map<unsigned, double> flt_map_t;
 
-    maximum_likelihood_mixin()
+    maximum_likelihood_mixin(double class_smoothing_factor)
+     : _smoothing(class_smoothing_factor)
     { reset(); }
 
     void reset()
@@ -36,16 +39,16 @@ public:
 
     void add_observation(
         const features_t & feat,
-        const vec_flt_t & class_weight)
+        vec_flt_t class_mass_vec)
     {
         // first sample?
         if(!_num_classes)
         {
-            _num_classes = class_weight.size();
-            _class_mass.resize(class_weight.size(), 0);
+            _num_classes = class_mass_vec.size();
+            _class_mass.resize(class_mass_vec.size(), 0);
         }
 
-        if(class_weight.size() != _num_classes)
+        if(class_mass_vec.size() != _num_classes)
             throw std::runtime_error("class arity mismatch");
 
         // We're collecting weighted counts for three maximum-
@@ -55,7 +58,21 @@ public:
         //   p(c & f) (generative probability of a class label & feature)
 
         double class_mass = std::accumulate(
-            class_weight.begin(), class_weight.end(), 0.0);
+            class_mass_vec.begin(), class_mass_vec.end(), 0.0);
+
+        if(class_mass < FLT_EPSILON)
+            return;
+
+        // smooth observed class masses by degree '_smoothing'
+        {
+            double avg_class_mass = class_mass / _num_classes;
+
+            for(unsigned i = 0; i != _num_classes; ++i)
+            {
+                class_mass_vec[i] += _smoothing * (
+                    avg_class_mass - class_mass_vec[i]);
+            }
+        }
 
         double feature_mass = 0;
 
@@ -63,13 +80,13 @@ public:
         for(typename features_t::const_iterator it = feat.begin();
             it != feat.end(); ++it)
         {
-            vec_flt_t & cur_class_mass = _feature_class_mass[it->first];
+            vec_flt_t & cur_feat_class_mass = _feature_class_mass[it->first];
 
-            if(cur_class_mass.empty())
-                cur_class_mass.resize(_num_classes, 0);
+            if(cur_feat_class_mass.empty())
+                cur_feat_class_mass.resize(_num_classes, 0);
 
             for(unsigned i = 0; i != _num_classes; ++i)
-                cur_class_mass[i] += it->second * class_weight[i];
+                cur_feat_class_mass[i] += it->second * class_mass_vec[i];
 
             feature_mass += it->second;
         }
@@ -77,7 +94,7 @@ public:
         // collect observations for p(c)
         for(unsigned i = 0; i != _num_classes; ++i)
         {
-            _class_mass[i] += class_weight[i] * feature_mass;
+            _class_mass[i] += class_mass_vec[i] * feature_mass;
         }
 
         // collect observations for p(f)
@@ -101,6 +118,8 @@ protected:
     vec_flt_map_t _feature_class_mass;
 
     double _total_mass;
+
+    double _smoothing;
 };
 
 };

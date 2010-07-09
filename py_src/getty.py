@@ -5,6 +5,10 @@ class Singleton(object):
 class Dynamic(object):
     pass
 
+class Config(object):
+    def __init__(self, annotation):
+        self.annotation = annotation
+
 class InjectionState(object):
     __slots__ = ['inst', 'annot', 'req']
 
@@ -42,10 +46,34 @@ class RequirementDescription(object):
             assert key in self.req, key
 
         kls_dict = sys._getframe(1).f_locals
-        kls_dict.setdefault(
-            '__getty__', InjectionState()
-        ).req = self.req
+        istate = kls_dict.setdefault(
+            '__getty__', InjectionState())
+
+        for kw, val in self.req.items():
+            if isinstance(val, Config):
+                istate.req[kw] = Config
+                istate.annot[kw] = val.annotation
+            else:
+                istate.req[kw] = val
+
         return init
+
+class Extension(object):
+
+    def __init__(self, kls):
+        self.istate = kls.__getty__ = InjectionState()
+
+    def requires(self, **kwargs):
+
+        for kw, val in kwargs.items():
+            if isinstance(val, Config):
+                self.istate.req[kw] = Config
+                self.istate.annot[kw] = val.annotation
+            else:
+                self.istate.req[kw] = val
+
+    def annotation(self, **kwargs):
+        self.istate.annot = kwargs
 
 class Injector(object):
 

@@ -18,6 +18,9 @@ class InternTable(object):
 
         return self._str_to_id[str]
 
+    def get_str(self, id):
+        return self._id_to_str[id]
+
     def add_reference(self, id):
         self._id_to_cnt[id] += 1
 

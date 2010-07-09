@@ -19,6 +19,9 @@ public:
     typedef bind_ptr<const sparse_features>::ptr_t ptr_t;
     typedef bind_ptr<sparse_features>::ptr_t mutable_ptr_t;
 
+    sparse_features()
+    { }
+
     sparse_features(const std::map<unsigned, double> & m)
     {
         resize(m.size());
@@ -26,6 +29,7 @@ public:
         std::sort(begin(), end());
         return;
     }
+
 };
 
 };
