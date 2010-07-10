@@ -13,7 +13,7 @@ public:
 
     static void normalize_L1(std::vector<double> & v)
     {
-        double t = 1.0 / std::accumulate(v.begin(), v.end(), 0);
+        double t = 1.0 / std::accumulate(v.begin(), v.end(), 0.0);
 
         for(unsigned i = 0; i != v.size(); ++i)
             v[i] *= t;

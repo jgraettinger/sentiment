@@ -59,8 +59,8 @@ public:
         // normalize to obtain MLE mean
         _mean = _mean * (1.0 / _sample_mass);
 
-        _mean.print("mean: ");
-        std::cout << std::endl;
+//        _mean.print("mean: ");
+//        std::cout << std::endl;
 
         // compute covariance matrix
         for(unsigned i = 0; i != _samples.size(); ++i)
@@ -76,7 +76,7 @@ public:
 
         // normalize to obtain MLE covariance; to obtain an unbiased estimator,
         //  normalize by N - 1 (or, avg sample mass in this case)
-        _covar *= 1.0 / (_sample_mass - _sample_mass / _samples.size());
+        _covar *= 1.0 / _sample_mass;
 
         // Perform SVD over co-variance matrix
         arma::mat U, V;
@@ -86,15 +86,17 @@ public:
             throw std::runtime_error("SVD decomposition failed");
 
         // inverse(covar) = inverse(U x S x T*) = V x inv(S) x U*
-        _inv_covar = V * diagmat(1 / s) * arma::trans(U);
+        //_inv_covar = V * diagmat(1 / s) * arma::trans(U);
+        _inv_covar = arma::inv(_covar);
 
         // determinant is product of eigenvalues
-        double covar_det = arma::prod(s);
+        double covar_det = arma::det(_covar);
 
         _gauss_norm  = std::pow(2 * M_PI, _n_features / 2.0);
         _gauss_norm *= std::sqrt(covar_det);
         _gauss_norm  = std::log(_gauss_norm);
 
+/*
         _covar.print("covar: ");
         _inv_covar.print("inv_covar: ");
         arma::mat(_covar * _inv_covar).print("covar * inv_covar: ");
@@ -104,6 +106,7 @@ public:
         V.print("V: ");
 
         std::cout << "log gauss norm:\n  " << _gauss_norm << std::endl;
+*/
         return;
     }
 
@@ -143,4 +146,3 @@ private:
 };
 
 #endif
-

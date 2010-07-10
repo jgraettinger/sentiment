@@ -13,11 +13,8 @@ namespace cluster
 {
 using namespace std;
 
-template<
-    typename Estimator,
-    typename FeatureSelector
->
-void em_clusterer<Estimator, FeatureSelector>::sample_t::norm_class_probs()
+template<typename InputFeatures, typename Estimator>
+void em_clusterer<InputFeatures, Estimator>::sample_t::norm_class_probs()
 {
     // compute sum{ P(class | sample) } (for normalization)
     double soft_norm = 0;
@@ -53,11 +50,8 @@ void em_clusterer<Estimator, FeatureSelector>::sample_t::norm_class_probs()
 }
 
 
-template<
-    typename Estimator,
-    typename FeatureSelector
->
-void em_clusterer<Estimator, FeatureSelector>::add_cluster(
+template<typename InputFeatures, typename Estimator>
+void em_clusterer<InputFeatures, Estimator>::add_cluster(
     const std::string & uid, typename Estimator::ptr_t estimator)
 {
     vector<string>::iterator c_it = lower_bound(
@@ -87,11 +81,8 @@ void em_clusterer<Estimator, FeatureSelector>::add_cluster(
     return;
 }
 
-template<
-    typename Estimator,
-    typename FeatureSelector
->
-void em_clusterer<Estimator, FeatureSelector>::drop_cluster(
+template<typename InputFeatures, typename Estimator>
+void em_clusterer<InputFeatures, Estimator>::drop_cluster(
     const string & uid)
 {
     vector<string>::iterator c_it = lower_bound(
@@ -120,13 +111,30 @@ void em_clusterer<Estimator, FeatureSelector>::drop_cluster(
     return;
 }
 
-template<
-    typename Estimator,
-    typename FeatureSelector
->
-void em_clusterer<Estimator, FeatureSelector>::add_sample(
+// meta-classes for setting est_features iff
+//  it's the same type as input_features
+namespace {
+    template<bool eq_feat_types>
+    struct _est_features_init
+    {
+        template<typename Fi, typename Fe>
+        void operator()(Fe & fe, const Fi & fi)
+        { fe = fi; }
+    };
+
+    template<>
+    struct _est_features_init<false>
+    {
+        template<typename Fi, typename Fe>
+        void operator()(Fe & fe, const Fi & fi)
+        { }
+    };
+};
+
+template<typename InputFeatures, typename Estimator>
+void em_clusterer<InputFeatures, Estimator>::add_sample(
     const string & uid,
-    const features_ptr_t & feat,
+    const typename input_features_t::ptr_t & input_feat,
     const sample_cluster_state_t & cluster_probs)
 {
     if(_samples.find(uid) != _samples.end())
@@ -139,8 +147,11 @@ void em_clusterer<Estimator, FeatureSelector>::add_sample(
     sample.prob_sample_class.resize(_clusters.size(), 0);
     sample.is_hard.resize(_clusters.size(), false);
 
-    sample.features = feat;
-    sample.filtered_features = feat;
+    sample.input_features = input_feat;
+
+    // iff types are the same, set est_features to input_features
+    _est_features_init< boost::is_same<input_features_t, estimator_features_t
+        >::value>()(sample.est_features, input_feat);
 
     // iterate over (cluster-uid, (P(class | sample), is-hard))
     for(sample_cluster_state_t::const_iterator s_it = cluster_probs.begin();
@@ -162,11 +173,8 @@ void em_clusterer<Estimator, FeatureSelector>::add_sample(
     return;
 }
 
-template<
-    typename Estimator,
-    typename FeatureSelector
->
-void em_clusterer<Estimator, FeatureSelector>::drop_sample(
+template<typename InputFeatures, typename Estimator>
+void em_clusterer<InputFeatures, Estimator>::drop_sample(
     const string & uid)
 {
     typename samples_t::iterator s_it = _samples.find(uid);
@@ -178,12 +186,9 @@ void em_clusterer<Estimator, FeatureSelector>::drop_sample(
     return;
 }
 
-template<
-    typename Estimator,
-    typename FeatureSelector
->
-typename em_clusterer<Estimator, FeatureSelector>::sample_cluster_state_t
-em_clusterer<Estimator, FeatureSelector>::get_sample_probabilities(
+template<typename InputFeatures, typename Estimator>
+typename em_clusterer<InputFeatures, Estimator>::sample_cluster_state_t
+em_clusterer<InputFeatures, Estimator>::get_sample_probabilities(
     const string & uid)
 {
     if(_samples.find(uid) == _samples.end())
@@ -204,27 +209,26 @@ em_clusterer<Estimator, FeatureSelector>::get_sample_probabilities(
     return probs;
 }
 
-template<
-    typename Estimator,
-    typename FeatureSelector
->
-unsigned em_clusterer<Estimator, FeatureSelector>::feature_selection()
+template<typename InputFeatures, typename Estimator>
+template<typename FeatureTransform>
+unsigned em_clusterer<InputFeatures, Estimator>::transform_features(
+    const typename FeatureTransform::ptr_t & feature_transform)
 {
-    _feature_selector->reset();
+    feature_transform->reset();
 
-    // prime feature-selection by passing current
+    // prime feature-transform by passing current
     //  features & class membership observations
     for(typename samples_t::const_iterator it = _samples.begin();
         it != _samples.end(); ++it)
     {
         const sample_t & sample(it->second);
 
-        // feed features & P(class | sample) to feature-selector
-        _feature_selector->add_observation(
-            sample.features, sample.prob_class_sample);
+        // feed features & P(class | sample) to feature transform
+        feature_transform->add_observation(
+            sample.input_features, sample.prob_class_sample);
     }
 
-    unsigned feat_count = _feature_selector->prepare_selector();
+    unsigned feat_count = feature_transform->prepare_transform();
 
     // generate filtered & normalized features for each sample
     for(typename samples_t::iterator it = _samples.begin();
@@ -232,19 +236,16 @@ unsigned em_clusterer<Estimator, FeatureSelector>::feature_selection()
     {
         sample_t & sample(it->second);
 
-        sample.filtered_features = \
-            _feature_selector->filter_features(sample.features);
+        sample.est_features = \
+            feature_transform->transform_features(sample.input_features);
     }
 
     // return number of active features
     return feat_count;
 }
 
-template<
-    typename Estimator,
-    typename FeatureSelector
->
-double em_clusterer<Estimator, FeatureSelector>::expect_and_maximize()
+template<typename InputFeatures, typename Estimator>
+double em_clusterer<InputFeatures, Estimator>::expect_and_maximize()
 {
     unsigned num_clusters = _clusters.size();
 
@@ -265,7 +266,7 @@ double em_clusterer<Estimator, FeatureSelector>::expect_and_maximize()
             for(size_t i = 0; i != num_clusters; ++i)
             {
                 _estimators[i]->add_observation(
-                    sample.filtered_features, sample.prob_class_sample[i]);
+                    sample.est_features, sample.prob_class_sample[i]);
 
                 // while we're here, sum cluster mass
                 // P(c) = sum{ P(c|s) for s in S}
@@ -283,7 +284,7 @@ double em_clusterer<Estimator, FeatureSelector>::expect_and_maximize()
         {
             // shift probability slightly back to even
             double avg_cluster_prob = 1.0 / num_clusters;
-            cluster_prob[i] += 0.02 * (avg_cluster_prob - cluster_prob[i]);
+            cluster_prob[i] += 0.00 * (avg_cluster_prob - cluster_prob[i]);
 
             std::cout << cluster_prob[i] << ", ";
         }
@@ -304,7 +305,7 @@ double em_clusterer<Estimator, FeatureSelector>::expect_and_maximize()
             {
                 // query estimator for log P(sample|class)
                 sample.prob_sample_class[i] = \
-                    _estimators[i]->estimate(sample.filtered_features);
+                    _estimators[i]->estimate(sample.est_features);
             }
 
             // track the total generative probability of the sample;
@@ -312,7 +313,7 @@ double em_clusterer<Estimator, FeatureSelector>::expect_and_maximize()
             //  explained by the current model / clusters
             sample.log_prob_sample = std::accumulate(
                 sample.prob_sample_class.begin(),
-                sample.prob_sample_class.end(), 0);
+                sample.prob_sample_class.end(), 0.0);
 
             // largest log P(sample | class)
             double lprob_norm = *std::max_element(
@@ -329,7 +330,7 @@ double em_clusterer<Estimator, FeatureSelector>::expect_and_maximize()
             }
 
             // normalize to reflect P(sample | class) / P(sample)
-            vector_ops::normalize_L1(sample.prob_sample_class);
+//            vector_ops::normalize_L1(sample.prob_sample_class);
         }
 
         /// Maximization Step
@@ -347,6 +348,4 @@ double em_clusterer<Estimator, FeatureSelector>::expect_and_maximize()
     return 0;
 }
 
-
 };
-

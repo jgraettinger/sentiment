@@ -19,7 +19,7 @@ bpl::list dense_features_as_list(const dense_features::ptr_t & s)
 void make_dense_features_bindings()
 {
     bpl::class_<dense_features, dense_features::mutable_ptr_t, boost::noncopyable>(
-        "dense_features", bpl::init<unsigned>())
+        "DenseFeatures", bpl::init<unsigned>())
         .def( bpl::init<const std::vector<double> &>())
         .def("as_list", &dense_features_as_list);
 
@@ -29,4 +29,3 @@ void make_dense_features_bindings()
 }
 
 };
-

@@ -2,6 +2,7 @@
 python-extension _cluster :
     [ glob *.cpp ]
     /site-config//boost_python
+    /site-config//armadillo
 ;
 
 install ext_dist :
@@ -10,4 +11,3 @@ install ext_dist :
 
 build-project feature_selection ;
 build-project estimation ;
-

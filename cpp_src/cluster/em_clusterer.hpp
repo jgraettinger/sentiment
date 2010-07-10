@@ -9,24 +9,21 @@
 namespace cluster
 {
 
-template<
-    typename Estimator,
-    typename FeatureSelector
->
+template<typename InputFeatures, typename Estimator>
 class em_clusterer
 {
 public:
 
-    typedef typename Estimator::features_t features_t;
-    typedef typename features_t::ptr_t features_ptr_t;
+    typedef Estimator     estimator_t;
+    typedef InputFeatures input_features_t;
+    typedef typename estimator_t::features_t estimator_features_t;
 
     typedef std::map<
         std::string,
         std::pair<double, bool>
     > sample_cluster_state_t;
 
-    em_clusterer(typename FeatureSelector::ptr_t feature_selector)
-      : _feature_selector(feature_selector)
+    em_clusterer()
     { }
 
     void add_cluster(
@@ -38,7 +35,7 @@ public:
 
     void add_sample(
         const std::string & uid,
-        const features_ptr_t & feat,
+        const typename input_features_t::ptr_t & feat,
         // {'cluster-uid': (P(c|s), is-hard)}
         const sample_cluster_state_t & cluster_probs
     );
@@ -48,7 +45,9 @@ public:
     sample_cluster_state_t get_sample_probabilities(
         const std::string & sample_uid);
 
-    unsigned feature_selection();
+    template<typename FeatureTransform>
+    unsigned transform_features(
+        const typename FeatureTransform::ptr_t &);
 
     double expect_and_maximize();
 
@@ -65,8 +64,8 @@ private:
         // whether P(cluster|sample) is 'hard'
         std::vector<bool> is_hard;
 
-        features_ptr_t features;
-        features_ptr_t filtered_features;
+        typename input_features_t::ptr_t   input_features;
+        typename estimator_features_t::ptr_t est_features;
 
         // unnormalized sum{ P(sample | class) for class in C}
         double log_prob_sample;
@@ -75,12 +74,10 @@ private:
     };
 
     typedef std::map<std::string, sample_t> samples_t;
+    samples_t _samples;
 
     std::vector<std::string> _clusters;
     std::vector<typename Estimator::ptr_t> _estimators;
-
-    typename FeatureSelector::ptr_t _feature_selector;
-    samples_t _samples;
 };
 
 };
@@ -88,4 +85,3 @@ private:
 #include "cluster/em_clusterer.impl.hpp"
 
 #endif
-
