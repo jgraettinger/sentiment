@@ -284,68 +284,50 @@ double em_clusterer<InputFeatures, Estimator>::expect_and_maximize()
         {
             // shift probability slightly back to even
             double avg_cluster_prob = 1.0 / num_clusters;
-            cluster_prob[i] += 0.00 * (avg_cluster_prob - cluster_prob[i]);
+            cluster_prob[i] += 0.02 * (avg_cluster_prob - cluster_prob[i]);
 
             std::cout << cluster_prob[i] << ", ";
         }
         std::cout << std::endl;
     }
 
+    double entropy = 0;
     for(unsigned i = 0; i != num_clusters; ++i)
-            _estimators[i]->prepare_estimator();
+        entropy += _estimators[i]->prepare_estimator();
 
+    /// Maximization Step
     for(typename samples_t::iterator it = _samples.begin();
         it != _samples.end(); ++it)
     {
         sample_t & sample( it->second);
 
-        /// Expectation Step (part 3: decode P(sample | class))
-        {
-            for(size_t i = 0; i != num_clusters; ++i)
-            {
-                // query estimator for log P(sample|class)
-                sample.prob_sample_class[i] = \
-                    _estimators[i]->estimate(sample.est_features);
-            }
-
-            // track the total generative probability of the sample;
-            //  useful for identifying samples which are poorly
-            //  explained by the current model / clusters
-            sample.log_prob_sample = std::accumulate(
-                sample.prob_sample_class.begin(),
-                sample.prob_sample_class.end(), 0.0);
-
-            // largest log P(sample | class)
-            double lprob_norm = *std::max_element(
-                sample.prob_sample_class.begin(),
-                sample.prob_sample_class.end());
-
-            // for numeric stability, subtract (divide in log space)
-            //  a constant factor, which preserves relative probabilities
-            //  but shifts the largest probability up to 1
-            for(size_t i = 0; i != num_clusters; ++i)
-            {
-                sample.prob_sample_class[i] = std::exp(
-                    sample.prob_sample_class[i] - lprob_norm);
-            }
-
-            // normalize to reflect P(sample | class) / P(sample)
-//            vector_ops::normalize_L1(sample.prob_sample_class);
-        }
+        // track the total generative probability of the sample;
+        //   useful for identifying the must unlikely samples
+        //   under the current model, which might be good
+        //   candidates for active-learning
+        sample.prob_sample = 0;
 
         /// Maximization Step
         for(size_t i = 0; i != num_clusters; ++i)
         {
+            // query estimator for P(sample|class)
+            sample.prob_sample_class[i] = \
+                _estimators[i]->estimate(sample.est_features);
+
+            // P(class|sample) = P(sample|class) * P(class) / P(sample)
+            double p_sample = sample.prob_sample_class[i] * cluster_prob[i];
+
+            sample.prob_sample += p_sample;
+
             if(sample.is_hard[i])
                 continue;
 
-            // P(class|sample) = P(class) * P(sample|class) / P(sample)
-            sample.prob_class_sample[i] = \
-                cluster_prob[i] * sample.prob_sample_class[i];
+            sample.prob_class_sample[i] = p_sample;
         }
         sample.norm_class_probs();
     }
-    return 0;
+
+    return entropy;
 }
 
 };

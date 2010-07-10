@@ -13,7 +13,10 @@ void make_gaussian_estimator_bindings()
         .def("reset", &gaussian_estimator::reset)
         .def("add_observation", &gaussian_estimator::add_observation)
         .def("prepare_estimator", &gaussian_estimator::prepare_estimator)
-        .def("estimate", &gaussian_estimator::estimate);
+        .def("estimate", &gaussian_estimator::estimate)
+        .def("get_mean", &gaussian_estimator::get_mean)
+        .def("get_eigenvector", &gaussian_estimator::get_eigenvector)
+        .def("get_eigenvalue", &gaussian_estimator::get_eigenvalue);
 }
 
 };

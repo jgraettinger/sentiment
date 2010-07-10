@@ -68,7 +68,7 @@ private:
         typename estimator_features_t::ptr_t est_features;
 
         // unnormalized sum{ P(sample | class) for class in C}
-        double log_prob_sample;
+        double prob_sample;
 
         void norm_class_probs();
     };
