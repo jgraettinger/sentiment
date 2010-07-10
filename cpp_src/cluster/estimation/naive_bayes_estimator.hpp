@@ -33,10 +33,12 @@ public:
 
     // train on sample & P(class | sample)
     void add_observation(
-        const features_t & feat, double prob_class_item)
+        const features_t::ptr_t & fptr, double prob_class_item)
     {
         if(prob_class_item <= 0)
             return;
+
+        const features_t & feat(*fptr);
 
         for(size_t i = 0; i != feat.size(); ++i)
         {
@@ -84,10 +86,12 @@ public:
     }
 
     // decode prob(sample | class)
-    double estimate(const features_t & feat)
+    double estimate(const features_t::ptr_t & fptr)
     {
-        if(feat.empty())
+        if(fptr->empty())
             return -DBL_MAX;
+
+        const features_t & feat(*fptr);
 
         double p_item = 0;
         for(size_t i = 0; i != feat.size(); ++i)

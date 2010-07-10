@@ -29,7 +29,6 @@ public:
         std::sort(begin(), end());
         return;
     }
-
 };
 
 };

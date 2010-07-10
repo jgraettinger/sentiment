@@ -24,6 +24,11 @@ int main(int argc, char ** argv)
     X.print();
     cout << endl;
 
+    cout << "iteration: " << endl;
+    for(mat::iterator it = X.begin(); it != X.end(); ++it)
+        cout << *it << endl;
+    cout << endl;
+
     mat S = zeros(U.n_rows, V.n_cols);
     S.diag(0) = s;
 

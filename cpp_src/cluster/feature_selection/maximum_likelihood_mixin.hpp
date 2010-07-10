@@ -38,9 +38,11 @@ public:
     }
 
     void add_observation(
-        const features_t & feat,
+        const typename features_t::ptr_t & fptr,
         vec_flt_t class_mass_vec)
     {
+        const features_t & feat(*fptr);
+
         // first sample?
         if(!_num_classes)
         {

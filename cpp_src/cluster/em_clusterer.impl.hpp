@@ -221,7 +221,7 @@ unsigned em_clusterer<Estimator, FeatureSelector>::feature_selection()
 
         // feed features & P(class | sample) to feature-selector
         _feature_selector->add_observation(
-            *sample.features, sample.prob_class_sample);
+            sample.features, sample.prob_class_sample);
     }
 
     unsigned feat_count = _feature_selector->prepare_selector();
@@ -233,7 +233,7 @@ unsigned em_clusterer<Estimator, FeatureSelector>::feature_selection()
         sample_t & sample(it->second);
 
         sample.filtered_features = \
-            _feature_selector->filter_features(*sample.features);
+            _feature_selector->filter_features(sample.features);
     }
 
     // return number of active features
@@ -265,7 +265,7 @@ double em_clusterer<Estimator, FeatureSelector>::expect_and_maximize()
             for(size_t i = 0; i != num_clusters; ++i)
             {
                 _estimators[i]->add_observation(
-                    *sample.filtered_features, sample.prob_class_sample[i]);
+                    sample.filtered_features, sample.prob_class_sample[i]);
 
                 // while we're here, sum cluster mass
                 // P(c) = sum{ P(c|s) for s in S}
@@ -304,7 +304,7 @@ double em_clusterer<Estimator, FeatureSelector>::expect_and_maximize()
             {
                 // query estimator for log P(sample|class)
                 sample.prob_sample_class[i] = \
-                    _estimators[i]->estimate(*sample.filtered_features);
+                    _estimators[i]->estimate(sample.filtered_features);
             }
 
             // track the total generative probability of the sample;

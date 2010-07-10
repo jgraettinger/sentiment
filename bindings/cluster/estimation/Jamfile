@@ -2,6 +2,7 @@
 python-extension _estimation :
     [ glob *.cpp ]
     /site-config//boost_python
+    /site-config//armadillo
 ;
 
 install ext_dist :

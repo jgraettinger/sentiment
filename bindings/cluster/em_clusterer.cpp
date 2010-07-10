@@ -1,7 +1,9 @@
 
 #include "cluster/em_clusterer.hpp"
 #include "cluster/estimation/naive_bayes_estimator.hpp"
+#include "cluster/estimation/gaussian_estimator.hpp"
 #include "cluster/feature_selection/information_gain_selector.hpp"
+#include "cluster/feature_selection/passthrough_selector.hpp"
 #include <boost/python.hpp>
 
 namespace cluster
@@ -37,6 +39,11 @@ void make_em_clusterer_bindings()
         estimation::naive_bayes_estimator,
         feature_selection::information_gain_selector
     >("NaiveBayesEmClusterer");
+
+    bind_em_clusterer<
+        estimation::gaussian_estimator,
+        feature_selection::passthrough_selector<dense_features>
+    >("DenseGaussEmClusterer");
 }
 
 };

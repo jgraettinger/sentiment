@@ -1,94 +1,80 @@
 
-import cluster
+from cluster.estimation import GaussianEstimator
+from cluster import dense_features
 import unittest
+import math
 import random
-
-class CoordFeaturizer(cluster.dense_vectorspace_featurizer):
-    def _py_featurize(self, doc_sample):
-        res = [float(i) for i in doc_sample.content.split()]
-        return res
 
 class TestGaussianEstimator(unittest.TestCase):
 
-    def setUp(self):
-        self.feat = CoordFeaturizer()
-        self.est = cluster.gaussian_estimator(self.feat)
-        self._id = 0
-        random.seed(32)
-        return
-
     def test_single(self):
 
-        for i in xrange(500):
-            self.add_sample(
-                [random.normalvariate(5, 0.7)], random.random())
+        random.seed(32)
+        est = GaussianEstimator(3)
 
-        self.est.prepare_estimator()
+        # rotate around z-axis by 45 degrees
+        #  In rotated coord-space, x & y are
+        #  correlated, but z is independent
+        angle = math.pi / 4 
 
-        # distribution is centered around mean, with
-        #  (roughly) appropriate drop-off at various
-        #  std-deviations from the mean
-        self.assertEquals( 0.60,
-            round(self.est_sample([5]), 2))
-        self.assertEquals( 0.32,
-            round(self.est_sample([5 - 0.7]), 2))
-        self.assertEquals( 0.08,
-            round(self.est_sample([5 + 2 * 0.7]), 2))
-
-    def test_joint(self):
+        m = [
+            [math.cos(angle), -math.sin(angle), 0],
+            [math.sin(angle),  math.cos(angle), 0],
+            [0,                0,               1],
+        ]
 
         for i in xrange(500):
-            self.add_sample([
-                random.normalvariate(5, 0.7),
-                random.normalvariate(2, 3),
-                random.normalvariate(10, 2)])
 
-        self.est.prepare_estimator()
+            x = random.normalvariate(5,  10)
+            y = random.normalvariate(1,  1)
+            z = random.normalvariate(10, 0.1)
 
-        # distribution peaks here
-        self.assertEquals( 0.016,
-            round(self.est_sample([5, 2, 10]), 3))
+            n_x = x * m[0][0] + y * m[0][1] + z * m[0][2]
+            n_y = x * m[1][0] + y * m[1][1] + z * m[1][2]
+            n_z = x * m[2][0] + y * m[2][1] + z * m[2][2]
 
-        # shifting any of the dimensions by their std deviation
-        #  causes (roughly) the same amount of probability drop-off
-        self.assertEquals( 0.009,
-            round(self.est_sample([5.7, 2, 10]), 3))
-        self.assertEquals( 0.010,
-            round(self.est_sample([5, 5, 10]), 3))
-        self.assertEquals( 0.009,
-            round(self.est_sample([5, 2, 8]), 3))
+            est.add_observation(
+                dense_features([n_x, n_y, n_z]), 1)
 
-    def test_weight(self):
+        est.prepare_estimator()
 
+        # Check co-var matrix & determinant
+        
+        est_pos = []
         for i in xrange(500):
-            self.add_sample([random.normalvariate(10, 5)], 1.0)
-            self.add_sample([random.normalvariate(0,  1)], 0.2)
 
-        self.est.prepare_estimator()
+            x = random.normalvariate(5,  10)
+            y = random.normalvariate(1,  1)
+            z = random.normalvariate(10, 0.1)
 
-        # distribution is centered around 8
-        p7 = self.est_sample([7])
-        p8 = self.est_sample([8])
-        p9 = self.est_sample([9])
+            n_x = x * m[0][0] + y * m[0][1] + z * m[0][2]
+            n_y = x * m[1][0] + y * m[1][1] + z * m[1][2]
+            n_z = x * m[2][0] + y * m[2][1] + z * m[2][2]
 
-        self.assertTrue(p8 > p7)
-        self.assertTrue(p8 > p9)
+            est_pos.append( est.estimate(
+                dense_features([n_x, n_y, n_z])))
 
-    def add_sample(self, vals, weight = 1.0):
-        self._id += 1
-        self.est.add_sample_probability(
-            self.feat.featurize(
-                cluster.document_sample(
-                    str(self._id), '', ' '.join(str(i) for i in vals))
-            ), weight
-        )
+        angle = math.pi / 3 
 
-    def est_sample(self, vals):
-        self._id += 1
-        return self.est.estimate_sample(
-            self.feat.featurize(
-                cluster.document_sample(
-                    str(self._id), '', ' '.join(str(i) for i in vals))
-            )
-        )
+        m = [
+            [math.cos(angle), -math.sin(angle), 0],
+            [math.sin(angle),  math.cos(angle), 0],
+            [0,                0,               1],
+        ]
+        est_null = []
+        for i in xrange(500):
+
+            x = random.normalvariate(5,  10)
+            y = random.normalvariate(1,  1)
+            z = random.normalvariate(10, 0.1)
+
+            n_x = x * m[0][0] + y * m[0][1] + z * m[0][2]
+            n_y = x * m[1][0] + y * m[1][1] + z * m[1][2]
+            n_z = x * m[2][0] + y * m[2][1] + z * m[2][2]
+
+            est_null.append( est.estimate(
+                dense_features([n_x, n_y, n_z])))
+
+        self.assertTrue(sum(est_pos) > sum(est_null))
+        return
 

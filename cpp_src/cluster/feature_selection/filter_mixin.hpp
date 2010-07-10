@@ -34,11 +34,13 @@ public:
         return features.size();
     }
 
-    typename Features::mutable_ptr_t filter_features(const Features & feat)
+    typename Features::mutable_ptr_t filter_features(
+        const typename Features::ptr_t & fptr)
     {
-        typename Features::mutable_ptr_t fptr(new Features());
+        const Features & feat(*fptr);
+        typename Features::mutable_ptr_t new_fptr(new Features());
 
-        Features & filt_feat(*fptr);
+        Features & filt_feat(*new_fptr);
         filt_feat.reserve(feat.size());
 
         for(unsigned i = 0; i != feat.size(); ++i)
@@ -49,16 +51,16 @@ public:
                 filt_feat.push_back(feat[i]);
             }
         }
-        return fptr;
+        return new_fptr;
     }
 
     typename Features::mutable_ptr_t filter_and_normalize_features(
-        const Features & feat)
+        const typename Features::ptr_t & fptr)
     {
-        typename Features::mutable_ptr_t fptr( filter_features(feat));
+        typename Features::mutable_ptr_t new_fptr( filter_features(fptr));
 
-        vector_ops::normalize_L1( *fptr);
-        return fptr;
+        vector_ops::normalize_L1( *new_fptr);
+        return new_fptr;
     }
 
 private:
