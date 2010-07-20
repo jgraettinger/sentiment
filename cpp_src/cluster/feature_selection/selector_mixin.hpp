@@ -3,7 +3,7 @@
 #define CLUSTER_FEATURE_SELECTION_SELECTOR_MIXIN_HPP
 
 #include <vector>
-
+#include <iostream>
 namespace cluster
 {
 namespace feature_selection
@@ -14,7 +14,7 @@ class selector_mixin
 {
 public:
 
-    typedef std::vector< std::pair<unsigned, double> > feature_stat_t;
+    typedef std::vector<std::pair<unsigned, double> > feature_stat_t;
 
     selector_mixin(
         unsigned min_features,
@@ -24,7 +24,12 @@ public:
         _min_features(min_features),
         _max_mass_ratio(max_mass_ratio),
         _max_features(max_features)
-    { }
+    {
+        std::cout << "min-feat " << _min_features << std::endl;
+        std::cout << "max-feat " << _max_features << std::endl;
+        std::cout << "max-ratio " << _max_mass_ratio << std::endl;
+        
+    }
 
     feature_stat_t select_features()
     {

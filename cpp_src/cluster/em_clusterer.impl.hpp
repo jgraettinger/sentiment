@@ -210,6 +210,31 @@ em_clusterer<InputFeatures, Estimator>::get_sample_probabilities(
 }
 
 template<typename InputFeatures, typename Estimator>
+typename em_clusterer<InputFeatures, Estimator>::estimator_features_t::ptr_t
+em_clusterer<InputFeatures, Estimator>::get_estimator_features(
+    const string & uid)
+{
+    typename samples_t::iterator it = _samples.find(uid);
+
+    if(it == _samples.end())
+        throw runtime_error("no sample with UID " + uid);
+
+    return it->second.est_features;
+}
+
+template<typename InputFeatures, typename Estimator>
+double em_clusterer<InputFeatures, Estimator>::get_sample_likelihood(
+    const string & uid)
+{
+    typename samples_t::iterator it = _samples.find(uid);
+
+    if(it == _samples.end())
+        throw runtime_error("no sample with UID " + uid);
+
+    return it->second.prob_sample;
+}
+
+template<typename InputFeatures, typename Estimator>
 template<typename FeatureTransform>
 unsigned em_clusterer<InputFeatures, Estimator>::transform_features(
     const typename FeatureTransform::ptr_t & feature_transform)

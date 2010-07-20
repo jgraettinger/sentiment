@@ -1,11 +1,14 @@
 
+import random
+
 class InternTable(object):
 
     def __init__(self):
         self._str_to_id = {}
         self._id_to_str = {}
         self._id_to_cnt = {}
-        self._next_id = 0
+        #self._next_id = 0
+        self._next_id = random.randint(0, 1<<32)
         return
     
     def get_id(self, str):
@@ -14,7 +17,10 @@ class InternTable(object):
             self._str_to_id[str] = self._next_id
             self._id_to_cnt[self._next_id] = 0
             self._id_to_str[self._next_id] = str
-            self._next_id += 1
+
+            while self._next_id in self._id_to_cnt:
+                self._next_id = random.randint(0, 1<<32)
+            #self._next_id += 1
 
         return self._str_to_id[str]
 

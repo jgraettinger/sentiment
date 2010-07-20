@@ -1,5 +1,5 @@
 
-from cluster import sparse_features
+from cluster import SparseFeatures
 
 import intern_table
 import getty
@@ -35,9 +35,8 @@ class TfIdfFeaturizer(object):
             t_id = self._itab.get_id(tok)
             feat[t_id] = feat.get(t_id, 0) + (1.0 / self._df[t_id])
 
-        norm = 1.0 / sum(feat.values())
-        return sparse_features(dict(
-            (i, j * norm) for i, j in feat.items()))
+        return SparseFeatures(dict(
+            (i, math.log(j)) for i, j in feat.items()))
 
 class TfFeaturizer(object):
 
@@ -58,7 +57,6 @@ class TfFeaturizer(object):
             else:
                 feat[t_id] += 1
 
-        norm = 1.0 / sum(feat.values())
-        return sparse_features(dict(
-            (i, j * norm) for i, j in feat.items()))
+        return SparseFeatures(dict(
+            (i, math.log(j)) for i, j in feat.items()))
 

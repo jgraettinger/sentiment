@@ -2,7 +2,6 @@
 #ifndef CLUSTER_FEATURE_SELECTION_FILTER_MIXIN_HPP
 #define CLUSTER_FEATURE_SELECTION_FILTER_MIXIN_HPP
 
-#include "cluster/vector_ops.hpp"
 #include <boost/unordered_set.hpp>
 #include <vector>
 
@@ -16,7 +15,7 @@ class filter_mixin
 {
 public:
 
-    typedef std::vector< std::pair<unsigned, double> > feature_stat_t;
+    typedef std::vector<std::pair<unsigned, double> > feature_stat_t;
     typedef boost::unordered_set<unsigned> feature_index_t;
 
     unsigned prepare_selector()
@@ -26,7 +25,7 @@ public:
         feature_stat_t features = \
             static_cast<Derived*>(this)->select_features();
 
-        for(feature_stat_t::iterator it = features.begin();
+        for(typename feature_stat_t::iterator it = features.begin();
             it != features.end(); ++it)
         {
             _index.insert( it->first);
@@ -51,15 +50,6 @@ public:
                 filt_feat.push_back(feat[i]);
             }
         }
-        return new_fptr;
-    }
-
-    typename Features::mutable_ptr_t filter_and_normalize_features(
-        const typename Features::ptr_t & fptr)
-    {
-        typename Features::mutable_ptr_t new_fptr( filter_features(fptr));
-
-        vector_ops::normalize_L1( *new_fptr);
         return new_fptr;
     }
 

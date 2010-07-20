@@ -45,6 +45,11 @@ public:
     sample_cluster_state_t get_sample_probabilities(
         const std::string & sample_uid);
 
+    typename estimator_features_t::ptr_t get_estimator_features(
+        const std::string & sample_uid);
+
+    double get_sample_likelihood(const std::string & uid);
+
     template<typename FeatureTransform>
     unsigned transform_features(
         const typename FeatureTransform::ptr_t &);
