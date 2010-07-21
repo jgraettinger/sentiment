@@ -3,7 +3,7 @@ import cluster
 import cluster.featurization.basic_featurize
 import cluster.normalization.basic_normalize
 import cluster.estimation
-import cluster.feature_selection
+import cluster.feature_transform
 import getty
 
 def bootstrap():
@@ -20,8 +20,8 @@ def bootstrap():
     inj.bind(cluster.normalization.Normalizer,
         to = cluster.normalization.basic_normalize.BasicNormalizer)
 
-    inj.bind(cluster.feature_selection.FeatureSelector,
-        to = cluster.feature_selection.InformationGainProjector)
+    inj.bind(cluster.feature_transform.FeatureSelector,
+        to = cluster.feature_transform.ProjIGainCutoffTransform)
 
 #    inj.bind(cluster.Clusterer, to = cluster.NaiveBayesEmClusterer)
 
@@ -33,7 +33,7 @@ def bootstrap():
     inj.bind_instance(getty.Config,
         with_annotation = 'min_features', to = 480)
     inj.bind_instance(getty.Config,
-        with_annotation = 'max_mass_ratio', to = 0.10)
+        with_annotation = 'max_mass_ratio', to = 0.70)
     inj.bind_instance(getty.Config,
         with_annotation = 'max_features', to = 100000)
     inj.bind_instance(getty.Config,

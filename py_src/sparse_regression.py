@@ -2,7 +2,7 @@
 import cluster.featurization
 import cluster.normalization
 import cluster.estimation
-import cluster.feature_selection
+import cluster.feature_transform
 
 import bootstrap
 
@@ -45,21 +45,20 @@ for doc_uid, doc_content in iterate_docs('all_neg.txt', 'neg'):
     featurizer.accumulate_doc_frequency(normalizer.normalize(doc_content))
 
 
-feat_selector = inj.get_instance(cluster.feature_selection.InformationGainProjector)
-
-feat_selector.reset()
+feat_transform = inj.get_instance(cluster.feature_transform.ProjIGainCutoffTransform)
 
 #### Feature Selection
+training = []
 for doc_uid, doc_content in iterate_docs('all_pos.txt', 'pos'):
     doc_feats = featurizer.featurize( normalizer.normalize(doc_content))
-    feat_selector.add_observation( doc_feats, [1, 0])
+    training.append( (doc_feats, [1, 0]))
 
 for doc_uid, doc_content in iterate_docs('all_neg.txt', 'neg'):
     doc_feats = featurizer.featurize( normalizer.normalize(doc_content))
-    feat_selector.add_observation( doc_feats, [0, 1])
+    training.append( (doc_feats, [0, 1]))
 
 print "FEATURE SELECTION: "
-print feat_selector.prepare_selector()
+print feat_transform.train_transform(training)
 
 #### Draw
 
@@ -72,7 +71,7 @@ def draw():
     glColor(1, 0, 0, 0.5)
     for doc_uid, doc_content in iterate_docs('all_neg.txt', 'neg'):
         doc_feats = featurizer.featurize( normalizer.normalize(doc_content))
-        doc_feats = feat_selector.filter_features(doc_feats)
+        doc_feats = feat_transform.transform(doc_feats)
 
         pos = doc_feats.as_list()
         #print pos
@@ -81,7 +80,7 @@ def draw():
     glColor(0, 0, 1, 0.5)
     for doc_uid, doc_content in iterate_docs('all_pos.txt', 'pos'):
         doc_feats = featurizer.featurize( normalizer.normalize(doc_content))
-        doc_feats = feat_selector.filter_features(doc_feats)
+        doc_feats = feat_transform.transform(doc_feats)
 
         pos = doc_feats.as_list()
         #print pos
@@ -113,7 +112,7 @@ def run(name):
     #glutKeyboardFunc(keyboard)
 
     glMatrixMode(GL_PROJECTION)
-    glOrtho(-200, 200, -200, 200, 1, -1)
+    glOrtho(-20, 20, -20, 20, 1, -1)
 
     glMatrixMode(GL_MODELVIEW)
     glPushMatrix()

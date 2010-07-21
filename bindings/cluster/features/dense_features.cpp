@@ -1,4 +1,4 @@
-#include "cluster/dense_features.hpp"
+#include "cluster/features/dense_features.hpp"
 #include "conversions/vector.hpp"
 #include <boost/python.hpp>
 #include <algorithm>
@@ -26,7 +26,10 @@ namespace boost{ namespace python{
 
 } } //boost::python
 
-namespace cluster {
+namespace cluster
+{
+namespace features
+{
 namespace bpl = boost::python;
 
 bpl::list dense_features_as_list(const dense_features::ptr_t & s)
@@ -53,4 +56,5 @@ void make_dense_features_bindings()
         dense_features::mutable_ptr_t, dense_features::ptr_t>();
 }
 
+};
 };

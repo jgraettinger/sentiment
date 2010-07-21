@@ -1,0 +1,10 @@
+
+python-extension _feature_transform :
+    [ glob *.cpp ]
+    /site-config//boost_python
+;
+
+install ext_dist :
+    _feature_transform
+    : <location>$(INSTALL)/cluster/feature_transform ;
+

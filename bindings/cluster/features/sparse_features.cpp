@@ -1,9 +1,10 @@
-#include "cluster/sparse_features.hpp"
+#include "cluster/features/sparse_features.hpp"
 #include "conversions/map.hpp"
 #include <boost/python.hpp>
 #include <algorithm>
 
 namespace cluster {
+namespace features {
 namespace bpl = boost::python;
 
 bpl::dict sparse_features_as_dict(const sparse_features::ptr_t & s)
@@ -26,5 +27,5 @@ void make_sparse_features_bindings()
     bpl::implicitly_convertible<
         sparse_features::mutable_ptr_t, sparse_features::ptr_t>();
 }
-
+};
 };

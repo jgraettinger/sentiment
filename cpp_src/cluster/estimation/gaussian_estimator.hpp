@@ -1,7 +1,7 @@
 #ifndef CLUSTER_ESTIMATION_GAUSSIAN_ESTIMATOR_HPP
 #define CLUSTER_ESTIMATION_GAUSSIAN_ESTIMATOR_HPP
 
-#include "cluster/dense_features.hpp"
+#include "cluster/features/dense_features.hpp"
 #include <armadillo>
 #include <boost/shared_ptr.hpp>
 #include <vector>
@@ -19,7 +19,7 @@ public:
 
     typedef boost::shared_ptr<gaussian_estimator> ptr_t;
 
-    typedef dense_features features_t; 
+    typedef features::dense_features features_t; 
 
     gaussian_estimator(unsigned n_features)
      : _n_features(n_features),

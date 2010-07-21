@@ -1,24 +1,18 @@
+#ifndef CLUSTER_FEATURE_TRANSFORM_MAXIMUM_LIKELIHOOD_MIXIN_HPP
+#define CLUSTER_FEATURE_TRANSFORM_MAXIMUM_LIKELIHOOD_MIXIN_HPP
 
-#ifndef CLUSTER_FEATURE_SELECTION_MAXIMUM_LIKELIHOOD_MIXIN_HPP
-#define CLUSTER_FEATURE_SELECTION_MAXIMUM_LIKELIHOOD_MIXIN_HPP
-
+#include "cluster/features/traits.hpp"
 #include <boost/unordered_map.hpp>
 #include <vector>
 #include <numeric>
 #include <cfloat>
 
+namespace cluster {
+namespace feature_transform {
 
-namespace cluster
-{
-namespace feature_selection
-{
-
-template<typename Features>
 class maximum_likelihood_mixin
 {
 public:
-
-    typedef Features features_t;
 
     typedef std::vector<double> vec_flt_t;
     typedef boost::unordered_map<unsigned, vec_flt_t> vec_flt_map_t;
@@ -37,12 +31,11 @@ public:
         _feature_class_mass.clear();
     }
 
+    template<typename Features>
     void add_observation(
-        const typename features_t::ptr_t & fptr,
+        typename features::reference<Features>::type feat,
         vec_flt_t class_mass_vec)
     {
-        const features_t & feat(*fptr);
-
         // first sample?
         if(!_num_classes)
         {
@@ -78,32 +71,35 @@ public:
 
         double feature_mass = 0;
 
-        // collect observations for p(c & f)
-        for(typename features_t::const_iterator it = feat.begin();
-            it != feat.end(); ++it)
+        typename features::iterator<Features>::type it, end;
+        it = features::begin<Features>(feat);
+        end = features::end<Features>(feat);
+
+        // collect observations for p(c & f) & p(f)
+        for(; it != end; ++it)
         {
-            vec_flt_t & cur_feat_class_mass = _feature_class_mass[it->first];
+            unsigned f_id = features::deref_id(it);
+            double  f_val = features::deref_value(it);
+
+            vec_flt_t & cur_feat_class_mass = _feature_class_mass[f_id];
 
             if(cur_feat_class_mass.empty())
                 cur_feat_class_mass.resize(_num_classes, 0);
 
+            // p(c & f)
             for(unsigned i = 0; i != _num_classes; ++i)
-                cur_feat_class_mass[i] += it->second * class_mass_vec[i];
+                cur_feat_class_mass[i] += f_val * class_mass_vec[i];
 
-            feature_mass += it->second;
+            // p(f)
+            _feature_mass[f_id] += f_val * class_mass;
+
+            feature_mass += f_val;
         }
 
         // collect observations for p(c)
         for(unsigned i = 0; i != _num_classes; ++i)
         {
             _class_mass[i] += class_mass_vec[i] * feature_mass;
-        }
-
-        // collect observations for p(f)
-        for(typename features_t::const_iterator it = feat.begin();
-            it != feat.end(); ++it)
-        {
-            _feature_mass[it->first] += it->second * class_mass;
         }
 
         // normalizing constant

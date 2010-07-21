@@ -1,10 +1,11 @@
 
+#include "cluster/feature_selection/transforms.hpp"
 #include "cluster/em_clusterer.hpp"
-#include "cluster/sparse_features.hpp"
-#include "cluster/dense_features.hpp"
-#include "cluster/estimation/naive_bayes_estimator.hpp"
+#include "cluster/features/sparse_features.hpp"
+#include "cluster/features/dense_features.hpp"
 #include "cluster/estimation/gaussian_estimator.hpp"
-#include "cluster/feature_selection/information_gain_selector.hpp"
+
+
 #include <boost/python.hpp>
 
 namespace cluster
@@ -31,11 +32,34 @@ void make_em_clusterer_bindings()
         estimation::naive_bayes_estimator,
         feature_selection::information_gain_selector
     >("NaiveBayesEmClusterer");
-*/
+
+    typedef em_clusterer<
+        features::dense_features,
+        estimation::gaussian_estimator> est_t;
+
     bind_em_clusterer< em_clusterer<
-        dense_features,
+        features::dense_features,
         estimation::gaussian_estimator>
-    >("DenseGaussEmClusterer");
+    >("DenseGaussEmClusterer")
+    .def("transform_features", &est_t::transform_features<
+        feature_transform::random_projector_transform>)
+    .def("transform_features", &est_t::transform_features<
+        feature_transform::chained_transform<
+            feature_transform::random_projector_transform,
+            feature_transform::random_projector_transform> >);
+*/
+
+    typedef em_clusterer<
+        features::sparse_features,
+        estimation::gaussian_estimator> est2_t;
+
+    bind_em_clusterer< em_clusterer<
+        features::sparse_features,
+        estimation::gaussian_estimator>
+    >("SparseGaussEmClusterer")
+    .def("transform_features", &est2_t::transform_features<
+        feature_transform::proj_igain_cutoff_transform> );
 }
 
 };
+

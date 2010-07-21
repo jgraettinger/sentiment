@@ -1,6 +1,10 @@
 #include "cluster/em_clusterer.hpp"
 #include "cluster/vector_ops.hpp"
+#include <boost/iterator/transform_iterator.hpp>
+#include <boost/iterator/zip_iterator.hpp>
 #include <boost/unordered_set.hpp>
+#include <boost/lambda/lambda.hpp>
+#include <boost/bind.hpp>
 #include <cfloat>
 #include <cmath>
 #include <numeric>
@@ -239,34 +243,46 @@ template<typename FeatureTransform>
 unsigned em_clusterer<InputFeatures, Estimator>::transform_features(
     const typename FeatureTransform::ptr_t & feature_transform)
 {
-    feature_transform->reset();
+    // extractor of sample features from samples_t value
+    boost::function<
+        const typename InputFeatures::ptr_t & (
+            const typename samples_t::value_type &)
+    > feat_ex(
+        boost::bind( &sample_t::input_features,
+            boost::bind( &samples_t::value_type::second, boost::lambda::_1)));
 
-    // prime feature-transform by passing current
-    //  features & class membership observations
-    for(typename samples_t::const_iterator it = _samples.begin();
-        it != _samples.end(); ++it)
-    {
-        const sample_t & sample(it->second);
+    // extractor of sample probability from samples_t value
+    boost::function<
+        const std::vector<double> & (
+            const typename samples_t::value_type &)
+    > prob_ex(
+        boost::bind( &sample_t::prob_class_sample,
+            boost::bind( &samples_t::value_type::second, boost::lambda::_1)));
 
-        // feed features & P(class | sample) to feature transform
-        feature_transform->add_observation(
-            sample.input_features, sample.prob_class_sample);
-    }
+    // functors for training & performing the transform
+    typename FeatureTransform::template train_transform<
+        InputFeatures> train_transform(feature_transform);
+    typename FeatureTransform::template transform<
+        InputFeatures> do_transform(feature_transform);
 
-    unsigned feat_count = feature_transform->prepare_transform();
+    train_transform(
+        boost::make_zip_iterator( boost::make_tuple(
+            boost::make_transform_iterator(_samples.begin(), feat_ex),
+            boost::make_transform_iterator(_samples.begin(), prob_ex))),
+        boost::make_zip_iterator( boost::make_tuple(
+            boost::make_transform_iterator(_samples.end(), feat_ex),
+            boost::make_transform_iterator(_samples.end(), prob_ex))));
 
-    // generate filtered & normalized features for each sample
     for(typename samples_t::iterator it = _samples.begin();
         it != _samples.end(); ++it)
     {
         sample_t & sample(it->second);
 
-        sample.est_features = \
-            feature_transform->transform_features(sample.input_features);
+        sample.est_features = do_transform(sample.input_features);
     }
 
     // return number of active features
-    return feat_count;
+    return 0;
 }
 
 template<typename InputFeatures, typename Estimator>

@@ -10,8 +10,8 @@ class InternTable(object):
         #self._next_id = 0
         self._next_id = random.randint(0, 1<<32)
         return
-    
-    def get_id(self, str):
+
+    def add_token(self, str):
 
         if str not in self._str_to_id:
             self._str_to_id[str] = self._next_id
@@ -22,6 +22,9 @@ class InternTable(object):
                 self._next_id = random.randint(0, 1<<32)
             #self._next_id += 1
 
+        return self._str_to_id[str]
+
+    def get_id(self, str):
         return self._str_to_id[str]
 
     def get_str(self, id):

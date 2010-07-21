@@ -2,7 +2,7 @@
 #ifndef CLUSTER_NAIVE_BAYES_ESTIMATOR_HPP
 #define CLUSTER_NAIVE_BAYES_ESTIMATOR_HPP
 
-#include "cluster/sparse_features.hpp"
+#include "cluster/features/sparse_features.hpp"
 #include <boost/unordered_map.hpp>
 #include <boost/shared_ptr.hpp>
 #include <cfloat>
@@ -18,7 +18,7 @@ public:
 
     typedef boost::shared_ptr<naive_bayes_estimator> ptr_t;
 
-    typedef sparse_features features_t;
+    typedef features::sparse_features features_t;
 
     naive_bayes_estimator(double alpha)
      : _prob_unk(1),

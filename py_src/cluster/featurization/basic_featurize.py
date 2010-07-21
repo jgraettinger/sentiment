@@ -1,5 +1,5 @@
 
-from cluster import SparseFeatures
+from cluster.features import SparseFeatures
 
 import intern_table
 import getty
@@ -17,7 +17,7 @@ class TfIdfFeaturizer(object):
         tokens = content.encode('utf8').split()
 
         for tok in set(tokens):
-            t_id = self._itab.get_id(tok)
+            t_id = self._itab.add_token(tok)
 
             if t_id not in self._df:
                 self._itab.add_reference(t_id)
@@ -33,10 +33,11 @@ class TfIdfFeaturizer(object):
         feat = {}
         for tok in tokens:
             t_id = self._itab.get_id(tok)
-            feat[t_id] = feat.get(t_id, 0) + (1.0 / self._df[t_id])
+            feat[t_id] = feat.get(t_id, 0) + 1
 
         return SparseFeatures(dict(
-            (i, math.log(j)) for i, j in feat.items()))
+            (i, (math.log(j) + 1.0) / self._df[t_id])\
+                for i,j in feat.items()))
 
 class TfFeaturizer(object):
 
@@ -49,7 +50,7 @@ class TfFeaturizer(object):
 
         feat = {}
         for tok in tokens:
-            t_id = self._itab.get_id(tok)
+            t_id = self._itab.add_token(tok)
 
             if t_id not in feat:
                 self._itab.add_reference(t_id)
@@ -58,5 +59,5 @@ class TfFeaturizer(object):
                 feat[t_id] += 1
 
         return SparseFeatures(dict(
-            (i, math.log(j)) for i, j in feat.items()))
+            (i, math.log(j) + 1) for i, j in feat.items()))
 

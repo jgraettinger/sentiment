@@ -9,5 +9,6 @@ install ext_dist :
     _cluster
     : <location>$(INSTALL)/cluster ;
 
-build-project feature_selection ;
+build-project features ;
+build-project feature_transform ;
 build-project estimation ;
