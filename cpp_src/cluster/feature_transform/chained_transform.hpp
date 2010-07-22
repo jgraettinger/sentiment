@@ -41,7 +41,7 @@ public:
             typedef typename first_transform_t::template transform<
                 InputFeatures> first_transform_t;
             typedef typename second_transform_t::template train_transform<
-                typename first_transform_t::result_type> second_train_t;
+                typename first_transform_t::output_features_t> second_train_t;
 
             // train first transform
             first_train_t(self->_first)(begin, end);
@@ -70,12 +70,13 @@ public:
         transform(const ptr_t & self) : self(self) {}
 
         typedef typename first_transform_t::template transform<InputFeatures
-            >::result_type first_result_t;
+            >::output_features_t first_result_t;
         typedef typename second_transform_t::template transform<first_result_t
-            >::result_type result_type;
+            >::output_features_t output_features_t;
+        typedef typename features::value<output_features_t>::type result_type;
 
-        typename features::value<result_type>::type operator()(
-            typename features::reference<InputFeatures>::type feat)
+        result_type operator()(
+            typename features::reference<InputFeatures>::type feat) const
         {
             return typename second_transform_t::template transform<first_result_t
                 >(self->_second)(

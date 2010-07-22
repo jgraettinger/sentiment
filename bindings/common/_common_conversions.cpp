@@ -17,6 +17,11 @@ BOOST_PYTHON_MODULE(_common_conversions)
     vector_from_python< std::vector<double>
         >::register_conversion();
 
+    vector_to_python< std::vector< std::vector<double> >
+        >::register_conversion();
+    vector_from_python< std::vector< std::vector<double> >
+        >::register_conversion();
+
     map_to_python< std::map<unsigned, double>
         >::register_conversion();
     map_from_python< std::map<unsigned, double>

@@ -5,7 +5,7 @@
 
 // specializations allowing wrapping smart-pointer to const dense_features
 namespace boost {
-    using namespace cluster;
+//    using namespace cluster;
 
     template<class T>
     inline T* get_pointer( boost::intrusive_ptr<const T> const& p ){
@@ -54,6 +54,12 @@ void make_dense_features_bindings()
     // implicit conversion from mutable to non-mutable ptr
     bpl::implicitly_convertible<
         dense_features::mutable_ptr_t, dense_features::ptr_t>();
+
+    // feature sequences
+    conversions::vector_to_python< std::vector<dense_features::ptr_t>
+        >::register_conversion();
+    conversions::vector_from_python< std::vector<dense_features::ptr_t>
+        >::register_conversion();
 }
 
 };

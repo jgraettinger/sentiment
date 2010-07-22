@@ -31,15 +31,17 @@ def bootstrap():
     inj.bind_instance(getty.Config,
         with_annotation = 'alpha', to = 0.04)
     inj.bind_instance(getty.Config,
-        with_annotation = 'min_features', to = 480)
+        with_annotation = 'min_features', to = 100)
     inj.bind_instance(getty.Config,
-        with_annotation = 'max_mass_ratio', to = 0.70)
+        with_annotation = 'max_mass_ratio', to = 0.75)
     inj.bind_instance(getty.Config,
         with_annotation = 'max_features', to = 100000)
     inj.bind_instance(getty.Config,
         with_annotation = 'class_smoothing_factor', to = 0.02)
     inj.bind_instance(getty.Config,
-        with_annotation = 'n_output_features', to = 2)
+        with_annotation = 'n_rand_output_features', to = 300)
+    inj.bind_instance(getty.Config,
+        with_annotation = 'n_pca_output_features', to = 50)
     
     return inj
 

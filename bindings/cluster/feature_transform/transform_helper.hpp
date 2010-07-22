@@ -15,27 +15,15 @@ namespace bpl = boost::python;
 
 template<typename Transform, typename Features>
 void py_train_transform_helper(
-    typename Transform::ptr_t transform, boost::python::list l)
+    typename Transform::ptr_t transform,
+    const std::vector< typename features::value<Features>::type > & vec_feat,
+    const std::vector< std::vector<double> > & vec_prob)
 {
-    typedef std::vector<typename features::value<Features>::type> vec_feat_t;
-    typedef std::vector<std::vector<double> > vec_prob_t;
+    if(vec_feat.size() != vec_prob.size())
+        throw std::runtime_error("feature & probability sequence arity mismatch");
 
-    vec_feat_t vec_feat;
-    vec_prob_t vec_prob;
-
-    if(PyObject_HasAttrString(l.ptr(), "__len__"))
-    {
-        vec_feat.reserve(bpl::len(l));
-        vec_prob.reserve(bpl::len(l));
-    }
-
-    for(bpl::object obj, iter = get_iterator(l); next(iter, obj);)
-    {
-        vec_feat.push_back( bpl::extract<
-            typename vec_feat_t::value_type>(obj[0])());
-        vec_prob.push_back( bpl::extract<
-            typename vec_prob_t::value_type>(obj[1])());
-    }
+    if(vec_feat.empty())
+        throw std::runtime_error("called with empty sequence");
 
     typename Transform::template train_transform<
         Features> train_transform(transform);
@@ -45,24 +33,16 @@ void py_train_transform_helper(
             vec_feat.begin(), vec_prob.begin())),
         boost::make_zip_iterator( boost::make_tuple(
             vec_feat.end(),   vec_prob.end())));
-};
+}
 
 template<typename Transform, typename Features>
 typename features::value<
-    typename Transform::template transform<Features>::result_type>::type
+    typename Transform::template transform<Features>::output_features_t>::type
 py_transform_helper(
     typename Transform::ptr_t transform,
     typename features::reference<Features>::type feat)
 {
     return typename Transform::template transform<Features>(transform)(feat);
-};
-
-
-template<typename Transform, typename Features>
-void make_transform_bindings(std::string transform_name)
-{
-
-
 }
 
 };

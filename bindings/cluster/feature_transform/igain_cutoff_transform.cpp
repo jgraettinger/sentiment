@@ -1,4 +1,3 @@
-
 #include "cluster/feature_transform/transform_helper.hpp"
 #include "cluster/feature_transform/transforms.hpp"
 #include "cluster/features/sparse_features.hpp"
@@ -52,6 +51,16 @@ void make_igain_cutoff_transform_bindings()
             proj_igain_cutoff_transform, features::sparse_features>)
         .def("transform", &feature_transform::py_transform_helper<
             proj_igain_cutoff_transform, features::sparse_features>);
+
+    bpl::class_<compact_igain_cutoff_transform,
+        compact_igain_cutoff_transform::ptr_t, boost::noncopyable>(
+            "CompactIGainCutoffTransform",
+            bpl::init<igain_cutoff_transform::ptr_t, compact_transform::ptr_t>( bpl::args(
+                "igain_cutoff_transform", "compact_transform")))
+        .def("train_transform", &feature_transform::py_train_transform_helper<
+            compact_igain_cutoff_transform, features::sparse_features>)
+        .def("transform", &feature_transform::py_transform_helper<
+            compact_igain_cutoff_transform, features::sparse_features>);
 }
 
 };

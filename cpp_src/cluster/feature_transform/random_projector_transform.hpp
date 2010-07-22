@@ -24,6 +24,8 @@ public:
     {
         train_transform(ptr_t){}
 
+        typedef InputFeatures input_features_t;
+
         template<typename FeaturesMembershipsZipIterator>
         void operator()(
             const FeaturesMembershipsZipIterator & begin,
@@ -39,15 +41,17 @@ public:
         ptr_t self;
         transform(const ptr_t & self) : self(self){}
 
-        typedef features::dense_features result_type;
+        typedef InputFeatures input_features_t;
+        typedef features::dense_features output_features_t;
+        typedef features::value<output_features_t>::type result_type;
 
-        features::value<result_type>::type operator()(
-            typename features::reference<InputFeatures>::type ifeat)
+        result_type operator()(
+            typename features::reference<InputFeatures>::type ifeat) const
         {
-            typename result_type::mutable_ptr_t of_ptr(
-                new result_type(self->_n_output_features));
+            typename output_features_t::mutable_ptr_t of_ptr(
+                new output_features_t(self->_n_output_features));
 
-            result_type & ofeat(*of_ptr);
+            output_features_t & ofeat(*of_ptr);
 
             typename features::iterator<InputFeatures>::type it = \
                 features::begin<InputFeatures>(ifeat);

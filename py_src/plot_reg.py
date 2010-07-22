@@ -16,7 +16,7 @@ from OpenGL.GLUT import *
 from OpenGL.GL import * 
 from OpenGL.GLU import *
 
-if len(sys.argv) != 2:
+if len(sys.argv) != 4:
     print "Usage: %s /path/to/dataset" % sys.argv[0]
     sys.exit(-1)
 
@@ -62,7 +62,7 @@ for doc_uid, doc_content in iterate_docs('all_neg.txt', 'neg'):
 print "FEATURE SELECTION: "
 print feat_transform.train_transform(train_feats, train_probs)
 
-d0, d1 = 0, 1
+d0, d1 = int(sys.argv[2]), int(sys.argv[3])
 #### Draw
 
 def draw():
@@ -77,11 +77,11 @@ def draw():
         doc_feats = feat_transform.transform(doc_feats)
 
         pos = doc_feats.as_list()
-        for ind, p in enumerate(pos):
-            glVertex3f(p, ind + 1, 0)
+#        for ind, p in enumerate(pos):
+#            glVertex3f(p, ind + 1, 0)
 
         #print pos
-#        glVertex3f(pos[d0], pos[d1], 0)
+        glVertex3f(pos[d0], pos[d1], 0)
 
     glColor(1, 0, 0, 0.2)
     for doc_uid, doc_content in iterate_docs('all_neg.txt', 'neg'):
@@ -89,11 +89,11 @@ def draw():
         doc_feats = feat_transform.transform(doc_feats)
 
         pos = doc_feats.as_list()
-        for ind, p in enumerate(pos):
-            glVertex3f(p, ind + 1, 0)
+#        for ind, p in enumerate(pos):
+#            glVertex3f(p, ind + 1, 0)
 
         #print pos
-#        glVertex3f(pos[d0], pos[d1], 0)
+        glVertex3f(pos[d0], pos[d1], 0)
 
     glEnd()
     glutSwapBuffers()
@@ -121,7 +121,7 @@ def run(name):
     #glutKeyboardFunc(keyboard)
 
     glMatrixMode(GL_PROJECTION)
-    glOrtho(-0.25, 0.25, -0.5, 50.5, 1, -1)
+    glOrtho(-0.25, 0.25, -0.25, 0.25, 1, -1)
 
     glMatrixMode(GL_MODELVIEW)
     glPushMatrix()

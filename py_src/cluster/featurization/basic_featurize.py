@@ -12,9 +12,11 @@ class TfIdfFeaturizer(object):
     def __init__(self, intern_table):
         self._itab = intern_table
         self._df = {}
+        self._n_docs = 1.0
 
     def accumulate_doc_frequency(self, content):
         tokens = content.encode('utf8').split()
+        self._n_docs += 1
 
         for tok in set(tokens):
             t_id = self._itab.add_token(tok)
@@ -35,9 +37,16 @@ class TfIdfFeaturizer(object):
             t_id = self._itab.get_id(tok)
             feat[t_id] = feat.get(t_id, 0) + 1
 
-        return SparseFeatures(dict(
-            (i, (math.log(j) + 1.0) / self._df[t_id])\
-                for i,j in feat.items()))
+        #feat = dict((i, math.log(j) + 1) for i,j in feat.items())
+        #feat = dict((i, j) for i,j in feat.items())
+
+        feat = dict((i, j * math.log(self._n_docs / self._df[i])) for i,j in feat.items())
+
+        norm = math.sqrt(sum(i * i for i in feat.values()))
+
+        feat = dict((i, j / norm) for i, j in feat.items())
+
+        return SparseFeatures(feat)
 
 class TfFeaturizer(object):
 
@@ -58,6 +67,10 @@ class TfFeaturizer(object):
             else:
                 feat[t_id] += 1
 
-        return SparseFeatures(dict(
-            (i, math.log(j) + 1) for i, j in feat.items()))
+        feat = dict((i, j) for i,j in feat.items())
+
+        norm = math.sqrt(sum(i * i for i in feat.values()))
+        feat = dict((i, j / norm) for i, j in feat.items())
+
+        return SparseFeatures(feat)
 

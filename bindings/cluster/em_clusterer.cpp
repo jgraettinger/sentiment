@@ -1,5 +1,5 @@
 
-#include "cluster/feature_selection/transforms.hpp"
+#include "cluster/feature_transform/transforms.hpp"
 #include "cluster/em_clusterer.hpp"
 #include "cluster/features/sparse_features.hpp"
 #include "cluster/features/dense_features.hpp"

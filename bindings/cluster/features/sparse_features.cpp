@@ -1,5 +1,5 @@
 #include "cluster/features/sparse_features.hpp"
-#include "conversions/map.hpp"
+#include "conversions/vector.hpp"
 #include <boost/python.hpp>
 #include <algorithm>
 
@@ -26,6 +26,12 @@ void make_sparse_features_bindings()
     // implicit conversion from mutable to non-mutable ptr
     bpl::implicitly_convertible<
         sparse_features::mutable_ptr_t, sparse_features::ptr_t>();
+
+    // feature sequences
+    conversions::vector_to_python< std::vector<sparse_features::ptr_t>
+        >::register_conversion();
+    conversions::vector_from_python< std::vector<sparse_features::ptr_t>
+        >::register_conversion();
 }
 };
 };
