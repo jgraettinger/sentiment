@@ -1,7 +1,9 @@
 
-import getty
-import model
-import wsgi_route
+from zuul.controller import common, secure_token, orm_session
+from zuul.model import Cluster
+import zuul.wsgi_route
+
+from mako.lookup import TemplateLookup
 
 from webob import Response
 from webob.dec import wsgify
@@ -10,14 +12,12 @@ from webob.exc import HTTPNotFound
 import sqlalchemy.orm
 import sqlalchemy as sa
 
-from mako.lookup import TemplateLookup
-
-from controller import common, secure_token, orm_session
+import getty
 
 class ClusterAction(object):
 
     @getty.requires(
-        app = wsgi_route.WSGIWare,
+        app = zuul.wsgi_route.WSGIWare,
         templates = TemplateLookup)
     def __init__(self, app, templates):
         self.app = app
@@ -39,19 +39,19 @@ class query(ClusterAction):
     @wsgify
     def __call__(self, req):
 
-        q = req.session.query(model.Cluster)
+        q = req.session.query(Cluster)
 
         if 'id' in req.route_args:
             q = q.filter_by(id = req.route_args['id'])
         elif 'id' in req.GET:
-            q = q.filter(model.Cluster.id.in_(req.GET.getall('id')))
+            q = q.filter(Cluster.id.in_(req.GET.getall('id')))
 
         if 'clustering_id' in req.GET:
-            q = q.filter(model.Cluster.clustering_id.in_(
+            q = q.filter(Cluster.clustering_id.in_(
                 req.GET.getall('clustering_id')))
 
         if 'name' in req.GET:
-            q = q.filter(model.Cluster.name.in_(req.GET.getall('name')))
+            q = q.filter(Cluster.name.in_(req.GET.getall('name')))
 
         req.query = q
         try:
@@ -93,7 +93,7 @@ class create(ClusterAction):
 
         try:
             fields = dict((k, v) for k, v in req.POST.items() if k[0] != '_')
-            inst = model.Cluster(**fields)
+            inst = Cluster(**fields)
             req.session.add(inst)
             req.session.commit()
             return self.render(req, 'create_okay', model = inst)
@@ -102,7 +102,7 @@ class create(ClusterAction):
             return self.render(req, 'create_fail', exception = e)
 
 class update(ClusterAction):
-    update_schema = model.Cluster.Schema(ignore_key_missing = True)
+    update_schema = Cluster.Schema(ignore_key_missing = True)
 
     @wsgify
     def __call__(self, req):

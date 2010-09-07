@@ -1,7 +1,9 @@
 
-import getty
-import model
-import wsgi_route
+from zuul.controller import common, secure_token, orm_session
+from zuul.model import Document
+import zuul.wsgi_route
+
+from mako.lookup import TemplateLookup
 
 from webob import Response
 from webob.dec import wsgify
@@ -10,14 +12,12 @@ from webob.exc import HTTPNotFound
 import sqlalchemy.orm
 import sqlalchemy as sa
 
-from mako.lookup import TemplateLookup
-
-from controller import common, secure_token, orm_session
+import getty
 
 class DocumentAction(object):
 
     @getty.requires(
-        app = wsgi_route.WSGIWare,
+        app = zuul.wsgi_route.WSGIWare,
         templates = TemplateLookup)
     def __init__(self, app, templates):
         self.app = app
@@ -40,17 +40,17 @@ class query(DocumentAction):
     @wsgify
     def __call__(self, req):
 
-        q = req.session.query(model.Document)
+        q = req.session.query(Document)
 
         if 'id' in req.route_args:
             q = q.filter_by(id = req.route_args['id'])
         elif 'id' in req.GET:
-            q = q.filter(model.Document.id.in_(req.GET.getall('id')))
+            q = q.filter(Document.id.in_(req.GET.getall('id')))
 
         if 'title' in req.GET:
-            q = q.filter(model.Document.title.in_(req.GET.getall('title')))
+            q = q.filter(Document.title.in_(req.GET.getall('title')))
         if 'author' in req.GET:
-            q = q.filter(model.Document.author.in_(req.GET.getall('author')))
+            q = q.filter(Document.author.in_(req.GET.getall('author')))
 
         req.query = q
         try:
@@ -91,9 +91,10 @@ class create(DocumentAction):
 
         try:
             fields = dict((k, v) for k, v in req.POST.items() if k[0] != '_')
-            inst = model.Document(**fields)
+            inst = Document(**fields)
             req.session.add(inst)
             req.session.commit()
+            req.session.refresh(inst)
             return self.render(req, 'create_okay', model = inst)
 
         except Exception, e:
@@ -104,7 +105,7 @@ class update(DocumentAction):
     def __call__(self, req):
 
         try:
-            fields = model.Document.validate_update(req.POST)
+            fields = Document.validate_update(req.POST)
             row_count = req.query.update(fields, synchronize_session = False)
             req.session.commit()
             return self.render(req, 'update_okay', row_count = row_count)

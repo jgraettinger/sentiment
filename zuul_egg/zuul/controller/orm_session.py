@@ -1,16 +1,17 @@
 
-import getty
-import wsgi_route
+import zuul.model.meta
+import zuul.wsgi_route
 
-import model.meta
 from webob.dec import wsgify
 from webob import Request, Response
+
+import getty
 
 class ORMSessionAction(object):
 
     @getty.requires(
-        orm = model.meta.ORM,
-        app = wsgi_route.WSGIWare)
+        orm = zuul.model.meta.ORM,
+        app = zuul.wsgi_route.WSGIWare)
     def __init__(self, orm, app):
         self.orm = orm
         self.app = app

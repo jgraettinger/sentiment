@@ -9,6 +9,7 @@ setuptools.setup(
     name = 'Zuul',
     version = '0.1',
     packages = ['zuul'],
+    scripts = ['start_zuul.py'],
 
     install_requires = [
         'Paste',

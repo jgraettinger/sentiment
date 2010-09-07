@@ -6,12 +6,12 @@ import cluster
 import cluster_document
 import secure_token
 
-import wsgi_route
+import zuul.wsgi_route
 import getty
 
 class DispatchMapping(object):
 
-    @getty.requires(dispatcher = wsgi_route.Dispatcher)
+    @getty.requires(dispatcher = zuul.wsgi_route.Dispatcher)
     def __init__(self, dispatcher):
 
         self.dispatcher = dispatcher

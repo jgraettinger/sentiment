@@ -1,31 +1,45 @@
+
 import urllib
 import cjson
 import sys
-from schema import cluster_db
 
-terms = sys.argv[1:] 
-args = {'lang': 'en', 'rpp': '100'}.items()
-args.extend(('q', i) for i in terms)
 
-uri_base = "http://search.twitter.com/search.json"
+uri = 'http://localhost:8080/'
 
-db = cluster_db.connect('test.db')
-db.execute('begin')
+query_terms = sys.argv[1:]
 
-next_page = '?%s' % urllib.urlencode(args)
+# create / look up clustering-id
+clustering_name = ('twitter: %s' % \
+    ' '.join(query_terms)).title()
 
-while next_page: 
+stoken = urllib.urlopen(uri + 'secure_token').read()
+print urllib.urlopen(uri + 'clustering.json', urllib.urlencode(
+    dict(name = clustering_name, _secure_token = stoken))).read()
+
+clustering_id = cjson.decode( urllib.urlopen(uri + 'clustering.json?name=' + \
+    urllib.quote(clustering_name)).read())[0]
+
+def query_twitter(query_terms):
     
-    full_uri = uri_base + next_page
-    print full_uri
-    content = cjson.decode(urllib.urlopen(full_uri).read())
-    
-    for result in content['results']:
-        db.execute(
-            'insert into document (id, content) values (?, ?)',
-            (result['id'], result['text']))
-    
-    next_page = content.get('next_page')
-    
-db.execute('end')
+    args = {'lang': 'en', 'rpp': '10'}.items()
+    args.extend(('q', i) for i in query_terms)
+
+    uri_base = "http://search.twitter.com/search.json"
+
+    next_page = '?%s' % urllib.urlencode(args)
+
+    while next_page: 
+
+        full_uri = uri_base + next_page
+        print full_uri
+        content = cjson.decode(urllib.urlopen(full_uri).read())
+
+        for result in content['results']:
+            import pdb; pdb.set_trace()
+
+        next_page = content.get('next_page')
+        break
+
+# query_twitter(query_terms)
+
 

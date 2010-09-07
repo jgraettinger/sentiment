@@ -13,7 +13,11 @@
 </%def>
 
 <%def name="create_okay(req, model_ns, model)">
-    {"status": "OK"}
+    <% 
+        req.session.refresh(model)
+        model = model.flatten()
+    %>
+    ${cjson.encode(dict(status = 'OK', model = model))}
 </%def>
 
 <%def name="update_okay(req, model_ns, row_count)">

@@ -1,14 +1,15 @@
 
-import getty
-import wsgi_route
+import zuul.wsgi_route
 
 from webob.exc import HTTPForbidden
 from webob.dec import wsgify
 from webob import Request, Response
 
+import getty
+
 class SecureTokenAction(object):
 
-    @getty.requires(app = wsgi_route.WSGIWare)
+    @getty.requires(app = zuul.wsgi_route.WSGIWare)
     def __init__(self, app):
         self.app = app
 

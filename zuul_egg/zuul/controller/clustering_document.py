@@ -1,7 +1,9 @@
 
-import getty
-import model
-import wsgi_route
+from zuul.controller import common, secure_token, orm_session
+from zuul.model import ClusteringDocument
+import zuul.wsgi_route
+
+from mako.lookup import TemplateLookup
 
 from webob import Response
 from webob.dec import wsgify
@@ -10,14 +12,13 @@ from webob.exc import HTTPNotFound
 import sqlalchemy.orm
 import sqlalchemy as sa
 
-from mako.lookup import TemplateLookup
+import getty
 
-from controller import common, secure_token, orm_session
 
 class ClusteringDocumentAction(object):
 
     @getty.requires(
-        app = wsgi_route.WSGIWare,
+        app = zuul.wsgi_route.WSGIWare,
         templates = TemplateLookup)
     def __init__(self, app, templates):
         self.app = app
@@ -39,13 +40,13 @@ class query(ClusteringDocumentAction):
     @wsgify
     def __call__(self, req):
 
-        q = req.session.query(model.ClusteringDocument)
+        q = req.session.query(ClusteringDocument)
 
         if 'clustering_id' in req.GET:
-            q = q.filter(model.ClusteringDocument.clustering_id.in_(
+            q = q.filter(ClusteringDocument.clustering_id.in_(
                 req.GET.getall('clustering_id')))
         if 'document_id' in req.GET:
-            q = q.filter(model.ClusteringDocument.document_id.in_(
+            q = q.filter(ClusteringDocument.document_id.in_(
                 req.GET.getall('document_id')))
 
         req.query = q
@@ -78,7 +79,7 @@ class create(ClusteringDocumentAction):
 
         try:
             fields = dict((k, v) for k, v in req.POST.items() if k[0] != '_')
-            inst = model.ClusteringDocument(**fields)
+            inst = ClusteringDocument(**fields)
             req.session.add(inst)
             req.session.commit()
             return self.render(req, 'create_okay', model = inst)
@@ -91,7 +92,7 @@ class update(ClusteringDocumentAction):
     def __call__(self, req):
 
         try:
-            fields = model.ClusteringDocument.validate_update(req.POST)
+            fields = ClusteringDocument.validate_update(req.POST)
             row_count = req.query.update(fields, synchronize_session = False)
             req.session.commit()
             return self.render(req, 'update_okay', row_count = row_count)

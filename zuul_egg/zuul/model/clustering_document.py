@@ -2,7 +2,7 @@
 import formencode
 import formencode.validators as fva
 
-from model.base import BaseModel
+from base import BaseModel
 
 class ClusteringDocument(BaseModel):
 

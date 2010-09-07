@@ -1,7 +1,9 @@
 
-import getty
-import model
-import wsgi_route
+from zuul.controller import common, secure_token, orm_session
+from zuul.model import Clustering
+import zuul.wsgi_route
+
+from mako.lookup import TemplateLookup
 
 from webob import Response
 from webob.dec import wsgify
@@ -10,14 +12,12 @@ from webob.exc import HTTPNotFound
 import sqlalchemy.orm
 import sqlalchemy as sa
 
-from mako.lookup import TemplateLookup
-
-from controller import common, secure_token, orm_session
+import getty
 
 class ClusteringAction(object):
 
     @getty.requires(
-        app = wsgi_route.WSGIWare,
+        app = zuul.wsgi_route.WSGIWare,
         templates = TemplateLookup)
     def __init__(self, app, templates):
         self.app = app
@@ -39,15 +39,15 @@ class query(ClusteringAction):
     @wsgify
     def __call__(self, req):
 
-        q = req.session.query(model.Clustering)
+        q = req.session.query(Clustering)
 
         if 'id' in req.route_args:
             q = q.filter_by(id = req.route_args['id'])
         elif 'id' in req.GET:
-            q = q.filter(model.Clustering.id.in_(req.GET.getall('id')))
+            q = q.filter(Clustering.id.in_(req.GET.getall('id')))
 
         if 'name' in req.GET:
-            q = q.filter(model.Clustering.name.in_(req.GET.getall('name')))
+            q = q.filter(Clustering.name.in_(req.GET.getall('name')))
 
         req.query = q
         try:
@@ -89,7 +89,7 @@ class create(ClusteringAction):
 
         try:
             fields = dict((k, v) for k, v in req.POST.items() if k[0] != '_')
-            inst = model.Clustering(**fields)
+            inst = Clustering(**fields)
             req.session.add(inst)
             req.session.commit()
             return self.render(req, 'create_okay', model = inst)
@@ -102,7 +102,7 @@ class update(ClusteringAction):
     def __call__(self, req):
 
         try:
-            fields = model.Clustering.validate_update(req.POST)
+            fields = Clustering.validate_update(req.POST)
             row_count = req.query.update(fields, synchronize_session = False)
             req.session.commit()
             return self.render(req, 'update_okay', row_count = row_count)
