@@ -1,8 +1,0 @@
-
-project cpp_src : requirements <include>. ;
-
-build-project cluster ;
-
-exe armadillo_test : armadillo_test.cpp /site-config//armadillo ;
-
-install inst_armadillo_test : armadillo_test : <location>$(INSTALL) ;

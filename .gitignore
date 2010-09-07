@@ -1,4 +1,7 @@
 *.swp
-/build/
-/debug/
-/release/
+*.so
+*.pyc
+*.egg-info
+build/
+/env/
+/distribute*.tar.gz

@@ -17,7 +17,7 @@ import mako.lookup
 
 inj.bind_instance(mako.lookup.TemplateLookup,
     to = mako.lookup.TemplateLookup(
-        directories = ['view'],
+        directories = ['zuul/view'],
         input_encoding = 'utf-8',
         output_encoding = 'utf-8',
         format_exceptions = True,

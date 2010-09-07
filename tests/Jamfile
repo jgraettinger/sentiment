@@ -1,5 +1,0 @@
-
-install install
- : [ glob-tree *.py ]
- : <location>$(INSTALL)/tests <install-source-root>. ;
-
