@@ -9,7 +9,7 @@ import os
 
 inj = getty.Injector()
 inj.bind_instance(getty.Config,
-    with_annotation = 'db_uri', to = 'sqlite:///:memory:')
+    with_annotation = 'db_uri', to = 'sqlite:////home/johng/sentiment/test.db')
 inj.bind_instance(getty.Config,
     with_annotation = 'echo_sql', to = True)
 inj.bind_instance(getty.Injector, to = inj)

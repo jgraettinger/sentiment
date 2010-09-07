@@ -9,7 +9,7 @@ class Cluster(BaseModel):
     class Schema(formencode.Schema):
         id = fva.Int(if_missing = None)
         clustering_id = fva.Int(not_empty = True)
-        name = fva.UnicodeString(strip = True, not_empty = True, max = 20)
+        name = fva.UnicodeString(strip = True, not_empty = True, max = 128)
 
     @classmethod
     def define_orm_mapping(kls, orm):

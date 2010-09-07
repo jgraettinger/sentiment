@@ -8,9 +8,9 @@ class Document(BaseModel):
 
     class Schema(formencode.Schema):
         id = fva.Int(if_missing = None)
-        title   = fva.UnicodeString(strip = True, not_empty = True, max = 20)
-        author  = fva.UnicodeString(strip = True, not_empty = True, max = 20)
-        content = fva.UnicodeString(strip = True, not_empty = True, max = 20)
+        title   = fva.UnicodeString(strip = True, not_empty = True, max = 256)
+        author  = fva.UnicodeString(strip = True, not_empty = True, max = 128)
+        content = fva.UnicodeString(strip = True, not_empty = True, max = 4096)
 
     @classmethod
     def define_orm_mapping(kls, orm):

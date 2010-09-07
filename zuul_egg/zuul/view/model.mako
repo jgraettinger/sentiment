@@ -1,5 +1,4 @@
 <%!
-    import cjson
     import webhelpers.html.tags
     import webhelpers.html as h
 %>
@@ -27,21 +26,6 @@
     %endif
 
     </table>
-</%def>
-
-<%def name="as_json(models)">
-    <%
-        context.write('[')
-        for ind, model in enumerate(models):
-            enc_mod = cjson.encode(model.flatten())
-
-            if ind:
-                context.write(',\r\n%s' % enc_mod)
-            else:
-                context.write(enc_mod)
-
-        context.write(']')
-    %>
 </%def>
 
 <%def name="as_form(req, uri, model)">
