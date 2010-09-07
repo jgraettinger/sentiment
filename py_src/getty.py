@@ -1,4 +1,5 @@
 import sys
+import types
 
 class Singleton(object):
     pass
@@ -39,10 +40,11 @@ class RequirementDescription(object):
 
     def __call__(self, init):
 
-        # Validate arguments
+        # injected args are in func arg list
         for key in self.req:
             assert key in init.func_code.co_varnames, key
-        for key in init.func_code.co_varnames[1:]:
+        # no un-injected func args
+        for key in init.func_code.co_varnames[1:init.func_code.co_argcount]:
             assert key in self.req, key
 
         kls_dict = sys._getframe(1).f_locals
@@ -94,12 +96,25 @@ class Injector(object):
             return scope
 
         ctor_args = {}
-        if '__getty__' in kls.__dict__:
-            inj_state = kls.__getty__
 
-            for r_name, r_kls in inj_state.req.items():
-                ctor_args[r_name] = self.get_instance(
-                    r_kls, inj_state.annot.get(r_name, None))
+        # Look for __getty__ decorations of kls, or
+        #  a base of kls *sharing kls's __init__ method*
+        for cur_kls in kls.mro():
+
+            if not isinstance(cur_kls.__init__, types.MethodType):
+                break
+
+            if cur_kls.__init__.im_func is not kls.__init__.im_func:
+                # different (non-inherited) __init__ methods
+                break
+
+            if '__getty__' in cur_kls.__dict__:
+                inj_state = kls.__getty__
+
+                for r_name, r_kls in inj_state.req.items():
+                    ctor_args[r_name] = self.get_instance(
+                        r_kls, inj_state.annot.get(r_name, None))
+                break
 
         new_inst = kls(**ctor_args)
 
@@ -108,7 +123,8 @@ class Injector(object):
 
         return new_inst 
 
-    def bind(self, key_kls, to, with_annotation = None, scope = Dynamic):
+    def bind(self, key_kls, to = None, with_annotation = None, scope = Dynamic):
+        to = key_kls if to is None else to
         self._bindings[(key_kls, with_annotation)] = (to, scope)
 
     def bind_instance(self, key_kls, to, with_annotation = None):
