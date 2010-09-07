@@ -3,5 +3,6 @@
 *.pyc
 *.egg-info
 build/
+dist/
 /env/
 /distribute*.tar.gz

@@ -18,6 +18,14 @@ extensions = [
         libraries = ['boost_python', 'armadillo'],
     ),
 
+    # cluster._common_conversions
+    setuptools.extension.Extension(
+        name = 'cluster._common_conversions',
+        sources = ['cluster/_common_conversions.cpp'],
+        include_dirs = ['.', '../include/'],
+        libraries = ['boost_python'],
+    ),
+
     # cluster.features._features
     setuptools.extension.Extension(
         name = 'cluster.features._features',
