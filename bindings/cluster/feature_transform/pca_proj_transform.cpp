@@ -21,7 +21,9 @@ void make_pca_proj_transform_bindings()
         .def("train_transform", &feature_transform::py_train_transform_helper<
             pca_projector_transform, features::sparse_features>)
         .def("transform", &feature_transform::py_transform_helper<
-            pca_projector_transform, features::sparse_features>);
+            pca_projector_transform, features::sparse_features>)
+        .def("get_eigenvalue", &pca_projector_transform::get_eigenvalue)
+        .def("get_eigenvector", &pca_projector_transform::get_eigenvector);
 
     bpl::class_<pca_proj_igain_cutoff_transform,
         pca_proj_igain_cutoff_transform::ptr_t, boost::noncopyable>(

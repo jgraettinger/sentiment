@@ -3,8 +3,6 @@ from cluster.feature_transform import PCAProjTransform
 from cluster.features import DenseFeatures, SparseFeatures
 import unittest
 
-import test_bootstrap
-
 class TestPCAProjectorTransform(unittest.TestCase):
 
     def test_dense(self):

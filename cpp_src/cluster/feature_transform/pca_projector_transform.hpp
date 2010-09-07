@@ -26,6 +26,36 @@ public:
     template<typename InputFeatures>
     struct transform;
 
+    double get_eigenvalue(unsigned i)
+    {
+        if(i < 0 || i >= _n_output_features)
+            throw std::runtime_error("range error");
+
+        return _svd_s[i];
+    }
+
+    std::vector<std::pair<unsigned, double> > get_eigenvector(unsigned i)
+    {
+        if(i < 0 || i >= _n_output_features)
+            throw std::runtime_error("range error");
+
+        typedef std::vector<std::pair<unsigned, double> > out_t;
+        out_t out;
+
+        if(_sparse_eigvecs.empty())
+        {
+            // learned a transform over dense inputs
+            for(unsigned j = 0; j != _svd_U.n_cols; ++j)
+                out[j] = std::make_pair(j, _svd_U(i, j));
+        }
+        else
+        {
+            out.insert(out.end(),
+                _sparse_eigvecs[i].begin(), _sparse_eigvecs[i].end());
+        }
+        return out;
+    }
+
 private:
 
     arma::rowvec _mean;
