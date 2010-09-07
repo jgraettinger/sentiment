@@ -1,32 +1,28 @@
 
-import cluster
-import cluster.featurization.basic_featurize
-import cluster.normalization.basic_normalize
-import cluster.estimation
-import cluster.feature_transform
+import vinz
+import vinz.featurization.basic_featurize
+import vinz.normalization.basic_normalize
+import vinz.normalization.twitter_normalize
+import vinz.estimation
+import vinz.feature_transform
 import getty
 
 def bootstrap():
 
     inj = getty.Injector()
 
-    inj.bind(cluster.featurization.InternTable,
-        to = cluster.featurization.InternTable,
+    inj.bind(vinz.featurization.InternTable,
+        to = vinz.featurization.InternTable,
         scope = getty.Singleton)
 
-    inj.bind(cluster.featurization.Featurizer,
-        to = cluster.featurization.basic_featurize.TfIdfFeaturizer)
+    inj.bind(vinz.featurization.Featurizer,
+        to = vinz.featurization.basic_featurize.TfIdfFeaturizer)
 
-    inj.bind(cluster.normalization.Normalizer,
-        to = cluster.normalization.basic_normalize.BasicNormalizer)
+    inj.bind(vinz.normalization.Normalizer,
+        to = vinz.normalization.twitter_normalize.TwitterNormalizer)
 
-    inj.bind(cluster.feature_transform.FeatureSelector,
-        to = cluster.feature_transform.ProjIGainCutoffTransform)
-
-#    inj.bind(cluster.Clusterer, to = cluster.NaiveBayesEmClusterer)
-
-#    inj.bind(cluster.estimation.Estimator,
-#        to = cluster.estimation.NaiveBayesEstimator)
+    inj.bind(vinz.feature_transform.FeatureSelector,
+        to = vinz.feature_transform.ProjIGainCutoffTransform)
 
     inj.bind_instance(getty.Config,
         with_annotation = 'alpha', to = 0.04)

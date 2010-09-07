@@ -3,6 +3,10 @@ import restful
 import urllib
 import sys
 
+if len(sys.argv) != 3:
+    print "Usage: %s <clustering name> <twitter query>" % sys.argv[0]
+    sys.exit(-1)
+
 clustering_name = sys.argv[1]
 query_terms = sys.argv[2]
 
@@ -23,6 +27,12 @@ except IndexError:
 # create / look up clustering-id
 print 'Clustering: %s' % clustering
 
+def clean_text(text):
+    text = text.replace('&quot;', '"')
+    text = text.replace('&amp;', '&')
+    text = text.replace('&lt;', '<')
+    text = text.replace('&gt;', '>')
+    return text
 
 def query_twitter(query_terms):
 
@@ -41,7 +51,8 @@ def query_twitter(query_terms):
                 doc = document_res.post( dict(
                     title = str(result['id']),
                     author = result['from_user'],
-                    content = result['text']))['model']
+                    content = clean_text(result['text']),
+                ))['model']
             except KeyError:
                 doc = document_res.get('', {'title': str(result['id'])})[0]
 
