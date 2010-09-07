@@ -37,7 +37,7 @@ class TfIdfFeaturizer(object):
             t_id = self._itab.get_id(tok)
             feat[t_id] = feat.get(t_id, 0) + 1
 
-        #feat = dict((i, math.log(j) + 1) for i,j in feat.items())
+        feat = dict((i, math.log(j) + 1) for i,j in feat.items())
         #feat = dict((i, j) for i,j in feat.items())
 
         feat = dict((i, j * math.log(self._n_docs / self._df[i])) for i,j in feat.items())
