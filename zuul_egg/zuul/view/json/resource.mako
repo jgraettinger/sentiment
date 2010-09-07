@@ -1,5 +1,5 @@
 <%!
-    import cjson, base64
+    import simplejson as json
 %>
 
 <%def name="index(req, model_ns, models)">
@@ -9,7 +9,7 @@
 
         context.write('[')
         for ind, model in enumerate(models):
-            enc_mod = cjson.encode(model.flatten())
+            enc_mod = json.dumps(model.flatten())
 
             if ind:
                 context.write(',\r\n%s' % enc_mod)
@@ -26,7 +26,7 @@
         req.resp.content_type_params = {'charset': 'utf8'}
 
         model = model.flatten()
-        context.write(cjson.encode(model))
+        context.write(json.dumps(model))
     %>
 </%def>
 
@@ -38,7 +38,7 @@
         req.session.refresh(model)
         model = model.flatten()
 
-        context.write(cjson.encode({'status': 'OK', 'model': model}))
+        context.write(json.dumps({'status': 'OK', 'model': model}))
     %>
 </%def>
 
@@ -47,7 +47,7 @@
         req.resp.content_type = 'application/json'
         req.resp.content_type_params = {'charset': 'utf8'}
 
-        context.write(cjson.encode({'status': 'OK', 'updated_row_count': row_count}))
+        context.write(json.dumps({'status': 'OK', 'updated_row_count': row_count}))
     %>
 </%def>
 
@@ -56,7 +56,7 @@
         req.resp.content_type = 'application/json'
         req.resp.content_type_params = {'charset': 'utf8'}
 
-        context.write(cjson.encode({'status': 'OK', 'deleted_row_count': row_count}))
+        context.write(json.dumps({'status': 'OK', 'deleted_row_count': row_count}))
     %>
 </%def>
 
@@ -65,7 +65,7 @@
         req.resp.content_type = 'application/json'
         req.resp.content_type_params = {'charset': 'utf8'}
 
-        context.write(cjson.encode({'status': 'ERROR', 'reason': str(exception)}))
+        context.write(json.dumps({'status': 'ERROR', 'reason': str(exception)}))
     %>
 </%def>
 
@@ -74,7 +74,7 @@
         req.resp.content_type = 'application/json'
         req.resp.content_type_params = {'charset': 'utf8'}
 
-        context.write(cjson.encode({'status': 'ERROR', 'reason': str(exception)}))
+        context.write(json.dumps({'status': 'ERROR', 'reason': str(exception)}))
     %>
 </%def>
 
@@ -83,7 +83,7 @@
         req.resp.content_type = 'application/json'
         req.resp.content_type_params = {'charset': 'utf8'}
 
-        context.write(cjson.encode({'status': 'ERROR', 'reason': str(exception)}))
+        context.write(json.dumps({'status': 'ERROR', 'reason': str(exception)}))
     %>
 </%def>
 

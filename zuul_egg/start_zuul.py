@@ -27,7 +27,7 @@ inj.bind_instance(mako.lookup.TemplateLookup,
         directories = [template_base],
         input_encoding = 'utf-8',
         output_encoding = 'utf-8',
-        format_exceptions = True,
+        #format_exceptions = True,
         #filesystem_checks = False,
         ))
 

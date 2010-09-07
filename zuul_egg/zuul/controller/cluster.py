@@ -102,14 +102,11 @@ class create(ClusterAction):
             return self.render(req, 'create_fail', exception = e)
 
 class update(ClusterAction):
-    update_schema = Cluster.Schema(ignore_key_missing = True)
-
     @wsgify
     def __call__(self, req):
 
         try:
-            fields = dict((k, v) for k, v in req.POST.items() if k[0] != '_')
-            fields = self.update_schema.to_python(fields)
+            fields = Cluster.validate_update(req.POST)
             row_count = req.query.update(fields, synchronize_session = False)
             req.session.commit()
             return self.render(req, 'update_okay', row_count = row_count)

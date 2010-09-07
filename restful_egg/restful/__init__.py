@@ -2,7 +2,7 @@
 import urllib
 import urllib2
 import cookielib
-import cjson
+import simplejson as json
 
 class ServiceError(RuntimeError): pass
 
@@ -106,7 +106,7 @@ class Service(object):
             resp_body.decode('utf8')
 
         if 'application/json' in con_type:
-            resp_body = cjson.decode(resp_body)
+            resp_body = json.loads(resp_body)
 
         return resp_body
 

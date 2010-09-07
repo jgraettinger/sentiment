@@ -1,9 +1,4 @@
 
-import cjson
-import base64
-
-from webob.dec import wsgify
-
 def create_resource_routes(dispatcher, res_name):
 
     m = dispatcher.mapper

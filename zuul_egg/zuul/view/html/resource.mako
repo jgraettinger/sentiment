@@ -1,7 +1,7 @@
 <%page expression_filter='h'/>
 
 <%!
-    import cjson, base64
+    import base64
     import webob.exc
     import webhelpers.html.tags
     import webhelpers.html as h
@@ -93,7 +93,7 @@
         req.resp.status = 303
         if 'id' in req.route_args:
             req.resp.location = req.make_url(action = 'show')
-            set_ui_flash(req.resp1, 'Updated')
+            set_ui_flash(req.resp, 'Updated')
         else:
             req.resp.location = model_ns.index_uri(req)
             set_ui_flash(req.resp, 'Updated %d Rows' % row_count)

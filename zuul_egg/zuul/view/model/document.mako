@@ -25,19 +25,19 @@
     <td>${model.id|h}</td>
     <td>${h.tags.link_to(model.title, self.show_uri(req, model))|n}</td>
     <td>${model.author|h}</td>
-    <td>${model.content[:50] + '...'|h}</td>
+    <td>${model.content[:150] + '...'|h}</td>
 </%def>
 
 <%def name="form_elements(req, doc)">
     <%
         m = model.flatten() if model else {}
-        title = req.POST.get('title', m.get('title', ''))
-        author = req.POST.get('author', m.get('author', ''))
-        content = req.POST.get('content', m.get('content', ''))
+        title = req.str_POST.get('title', m.get('title', '')).decode('utf8')
+        author = req.str_POST.get('author', m.get('author', '').decode('utf8'))
+        content = req.str_POST.get('content', m.get('content', '').decode('utf8'))
     %>
     Title:   ${h.tags.text(name = 'title', value = title)}<br>
     Author:  ${h.tags.text(name = 'author', value = author)}<br>
-    Content: ${h.tags.textarea(name = 'content', content = content)}<br>
+    Content: ${h.tags.textarea(name = 'content', rows = "50", cols = "80", content = content)}<br>
 </%def>
 
 
