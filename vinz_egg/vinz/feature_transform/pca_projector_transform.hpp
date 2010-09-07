@@ -239,6 +239,8 @@ struct pca_projector_transform::train_transform<features::sparse_features>
             }
         }
 
+        std::cout << "build covar, " << self->_covar.n_rows << ", ";
+        std::cout << self->_covar.n_cols << std::endl;
 //        self->_covar.print(std::cout, "covar-matrix");
 
         // Perform SVD over co-variance matrix

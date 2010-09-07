@@ -4,7 +4,7 @@ ez_setup.use_setuptools()
 import os
 import setuptools
 
-def enum_files(base_dir, extension):
+def enum_files(base_dir, *extension):
     return [os.path.join(base_dir, i) for i in \
         os.listdir(base_dir) if i.endswith(extension)]
 
@@ -23,7 +23,7 @@ extensions = [
         name = 'vinz.features._features',
         sources = enum_files('vinz/features', '.cpp'),
         include_dirs = ['vinz', '../include/'],
-        libraries = ['boost_python'],
+        libraries = ['boost_python', 'armadillo'],
     ),
 
     # vinz.feature_transform._feature_transform

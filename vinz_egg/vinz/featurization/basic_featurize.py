@@ -1,5 +1,5 @@
 
-from features import SparseFeatures
+from vinz.features import SparseFeatures
 
 import intern_table
 import getty
@@ -43,7 +43,6 @@ class TfIdfFeaturizer(object):
         feat = dict((i, j * math.log(self._n_docs / self._df[i])) for i,j in feat.items())
 
         norm = math.sqrt(sum(i * i for i in feat.values()))
-
         feat = dict((i, j / norm) for i, j in feat.items())
 
         return SparseFeatures(feat)

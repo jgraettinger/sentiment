@@ -23,7 +23,8 @@ public:
      : _n_features(n_features),
        _mean(n_features),
        _covar(n_features, n_features),
-       _inv_covar(n_features, n_features)
+       _inv_covar(n_features, n_features),
+       _soft_prob_coeff(1.0)
     { reset(); }
 
     void reset()
@@ -36,13 +37,16 @@ public:
     }
 
     void add_observation(
-        const features_t::ptr_t & feat, double prob_class_sample)
+        const features_t::ptr_t & feat, double prob_class_sample, bool is_hard)
     {
         if(feat->n_cols != _n_features)
             throw std::runtime_error("arity mismatch");
 
         if(prob_class_sample <= 0)
             return;
+
+        if(!is_hard)
+            prob_class_sample *= _soft_prob_coeff;
 
         _sample_mass += prob_class_sample;
 
@@ -139,6 +143,18 @@ public:
         return result;
     }
 
+    double get_soft_prob_coeff()
+    { return _soft_prob_coeff; }
+
+    void set_soft_prob_coeff(double soft_prob_coeff)
+    {
+        if(soft_prob_coeff < 0 || soft_prob_coeff > 1)
+            throw std::runtime_error("soft_prob_coeff range error");
+
+        _soft_prob_coeff = soft_prob_coeff;
+        return;
+    }
+
     std::vector<double> get_mean()
     {
         std::vector<double> v(_mean.n_cols);
@@ -163,6 +179,14 @@ public:
 private:
 
     const unsigned _n_features;
+
+    // Ratio which controls how strongly 'soft' (expected)
+    //  probability factors into the estimation, relative to
+    //  'hard' (user-provided) probablility. This variable
+    //  should fall within [0, 1], and can be adjusted during
+    //  the clustering process as a form of annealing,
+    //  serving to break the estimation out of a local minimum.
+    double _soft_prob_coeff;
 
     // MLE of distribution mean 
     arma::rowvec _mean;

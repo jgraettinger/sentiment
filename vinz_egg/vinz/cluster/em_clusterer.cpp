@@ -51,14 +51,13 @@ void make_em_clusterer_bindings()
 
     typedef em_clusterer<
         features::sparse_features,
-        estimation::gaussian_estimator> est2_t;
+        estimation::gaussian_estimator> sparse_clusterer_t;
 
-    bind_em_clusterer< em_clusterer<
-        features::sparse_features,
-        estimation::gaussian_estimator>
-    >("SparseGaussEmClusterer")
-    .def("transform_features", &est2_t::transform_features<
-        feature_transform::proj_igain_cutoff_transform> );
+    bind_em_clusterer<sparse_clusterer_t>("SparseGaussEmClusterer")
+    .def("transform_features", &sparse_clusterer_t::transform_features<
+        feature_transform::pca_projector_transform>)
+    .def("transform_features", &sparse_clusterer_t::transform_features<
+        feature_transform::proj_igain_cutoff_transform>);
 }
 
 };

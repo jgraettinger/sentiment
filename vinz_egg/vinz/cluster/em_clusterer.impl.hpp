@@ -310,7 +310,9 @@ double em_clusterer<InputFeatures, Estimator>::expect_and_maximize()
             for(size_t i = 0; i != num_clusters; ++i)
             {
                 _estimators[i]->add_observation(
-                    sample.est_features, sample.prob_class_sample[i]);
+                    sample.est_features,
+                    sample.prob_class_sample[i],
+                    sample.is_hard[i]);
 
                 // while we're here, sum cluster mass
                 // P(c) = sum{ P(c|s) for s in S}

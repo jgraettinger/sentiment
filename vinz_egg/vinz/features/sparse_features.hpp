@@ -35,6 +35,27 @@ public:
         std::sort(begin(), end());
         return;
     }
+
+    double inner_product(const sparse_features & other)
+    {
+        const_iterator  it1 = begin(), it2 = other.begin();
+        const_iterator end1 = end(),  end2 = other.end();
+
+        double prod = 0;
+        while(it1 != end1 && it2 != end2)
+        {
+            if(it1->first < it2->first)
+                ++it1;
+            else if(it1->first > it2->first)
+                ++it2;
+            else
+            {
+                prod += it1->second * it2->second;
+                ++it1; ++it2;
+            }
+        }
+        return prod;
+    }
 };
 
 };

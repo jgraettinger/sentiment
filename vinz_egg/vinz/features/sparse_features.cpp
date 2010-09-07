@@ -18,8 +18,10 @@ bpl::dict sparse_features_as_dict(const sparse_features::ptr_t & s)
 
 void make_sparse_features_bindings()
 {
-    bpl::class_<sparse_features, sparse_features::mutable_ptr_t, boost::noncopyable>(
+    bpl::class_<sparse_features,
+        sparse_features::mutable_ptr_t, boost::noncopyable>(
         "SparseFeatures", bpl::init<const std::map<unsigned, double> & >())
+        .def("inner_product", &sparse_features::inner_product)
         .def("as_dict", &sparse_features_as_dict);
 
     // implicit conversion from mutable to non-mutable ptr

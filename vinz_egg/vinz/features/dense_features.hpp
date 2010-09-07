@@ -27,6 +27,11 @@ public:
     dense_features(unsigned n_features)
      : arma::rowvec(n_features)
     { fill(0); }
+
+    double inner_product(const dense_features & other)
+    {
+        return arma::dot(*this, other);
+    }
 };
 
 // trait specializations for dense_features

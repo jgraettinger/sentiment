@@ -44,6 +44,7 @@ void make_dense_features_bindings()
     bpl::class_<dense_features, dense_features::mutable_ptr_t, boost::noncopyable>(
         "DenseFeatures", bpl::init<unsigned>())
         .def( bpl::init<const std::vector<double> &>())
+        .def("inner_product", &dense_features::inner_product)
         .def("as_list", &dense_features_as_list);
     
     bpl::register_ptr_to_python< dense_features::ptr_t>();
