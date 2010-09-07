@@ -10,14 +10,6 @@ def enum_files(base_dir, extension):
 
 extensions = [
 
-    # vinz._vinz
-    setuptools.extension.Extension(
-        name = 'vinz._vinz',
-        sources = enum_files('vinz', '.cpp'),
-        include_dirs = ['vinz', '../include/'],
-        libraries = ['boost_python', 'armadillo'],
-    ),
-
     # vinz._common_conversions
     setuptools.extension.Extension(
         name = 'vinz._common_conversions',
@@ -46,6 +38,14 @@ extensions = [
     setuptools.extension.Extension(
         name = 'vinz.estimation._estimation',
         sources = enum_files('vinz/estimation', '.cpp'),
+        include_dirs = ['vinz', '../include/'],
+        libraries = ['boost_python', 'armadillo'],
+    ),
+    
+    # vinz.cluster._cluster
+    setuptools.extension.Extension(
+        name = 'vinz.cluster._cluster',
+        sources = enum_files('vinz/cluster', '.cpp'),
         include_dirs = ['vinz', '../include/'],
         libraries = ['boost_python', 'armadillo'],
     ),

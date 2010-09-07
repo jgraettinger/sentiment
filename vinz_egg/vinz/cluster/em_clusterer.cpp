@@ -1,6 +1,6 @@
 
 #include "feature_transform/transforms.hpp"
-#include "em_clusterer.hpp"
+#include "cluster/em_clusterer.hpp"
 #include "features/sparse_features.hpp"
 #include "features/dense_features.hpp"
 #include "estimation/gaussian_estimator.hpp"
@@ -8,6 +8,9 @@
 #include <boost/python.hpp>
 
 namespace bpl = boost::python;
+
+namespace cluster
+{
 
 template<typename Clusterer>
 bpl::class_<Clusterer> bind_em_clusterer(const char * name)
@@ -57,4 +60,6 @@ void make_em_clusterer_bindings()
     .def("transform_features", &est2_t::transform_features<
         feature_transform::proj_igain_cutoff_transform> );
 }
+
+};
 

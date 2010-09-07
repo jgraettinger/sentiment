@@ -1,5 +1,7 @@
-#include "em_clusterer.hpp"
+
+#include "cluster/em_clusterer.hpp"
 #include "vector_ops.hpp"
+
 #include <boost/iterator/transform_iterator.hpp>
 #include <boost/iterator/zip_iterator.hpp>
 #include <boost/unordered_set.hpp>
@@ -12,6 +14,9 @@
 #include <stdexcept>
 
 #include <iostream>
+
+namespace cluster
+{
 
 using namespace std;
 
@@ -368,4 +373,6 @@ double em_clusterer<InputFeatures, Estimator>::expect_and_maximize()
 
     return entropy;
 }
+
+};
 

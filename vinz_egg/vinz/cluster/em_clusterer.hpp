@@ -1,10 +1,13 @@
 
-#ifndef EM_CLUSTERER_HPP
-#define EM_CLUSTERER_HPP
+#ifndef CLUSTER_EM_CLUSTERER_HPP
+#define CLUSTER_EM_CLUSTERER_HPP
 
 #include <string>
 #include <vector>
 #include <map>
+
+namespace cluster
+{
 
 template<typename InputFeatures, typename Estimator>
 class em_clusterer
@@ -80,6 +83,8 @@ private:
 
     std::vector<std::string> _clusters;
     std::vector<typename Estimator::ptr_t> _estimators;
+};
+
 };
 
 #include "em_clusterer.impl.hpp"
