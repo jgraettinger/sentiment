@@ -56,6 +56,7 @@ setuptools.setup(
     name = 'Vinz',
     version = '0.1',
     packages = ['vinz'],
+    scripts = ['interactive_clusterer.py'],
 
     install_requires = [
         'nose',

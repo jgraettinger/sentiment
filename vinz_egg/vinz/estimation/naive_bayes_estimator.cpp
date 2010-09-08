@@ -1,3 +1,5 @@
+#if 0
+
 #include "estimation/naive_bayes_estimator.hpp"
 #include <boost/python.hpp>
 
@@ -16,4 +18,4 @@ void make_naive_bayes_estimator_bindings()
 }
 
 };
-
+#endif

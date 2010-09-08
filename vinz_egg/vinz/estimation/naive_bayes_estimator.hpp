@@ -1,3 +1,4 @@
+#error This is broken code, don't include
 
 #ifndef NAIVE_BAYES_ESTIMATOR_HPP
 #define NAIVE_BAYES_ESTIMATOR_HPP

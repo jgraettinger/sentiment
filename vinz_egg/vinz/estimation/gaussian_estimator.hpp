@@ -21,10 +21,10 @@ public:
 
     gaussian_estimator(unsigned n_features)
      : _n_features(n_features),
+       _soft_prob_coeff(1.0),
        _mean(n_features),
        _covar(n_features, n_features),
-       _inv_covar(n_features, n_features),
-       _soft_prob_coeff(1.0)
+       _inv_covar(n_features, n_features)
     { reset(); }
 
     void reset()
