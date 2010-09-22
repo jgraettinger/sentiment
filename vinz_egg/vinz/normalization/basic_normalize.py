@@ -15,3 +15,12 @@ class BasicNormalizer(object):
         text = ' '.join(t for t in self.re_split.split(text.lower()) if t and t != 'rt')
         return text
 
+
+class NoOpNormalizer(object):
+    
+    def __init__(self):
+        return
+
+    def normalize(self, obj):
+        return obj
+

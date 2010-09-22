@@ -3,8 +3,8 @@ del _estimation
 
 import getty
 
-getty.Extension(NaiveBayesEstimator).requires(
-    alpha = getty.Config('alpha'))
+#getty.Extension(NaiveBayesEstimator).requires(
+#    alpha = getty.Config('alpha'))
 
 # injection key
 class Estimator: pass

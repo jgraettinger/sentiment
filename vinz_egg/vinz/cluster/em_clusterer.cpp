@@ -28,26 +28,11 @@ bpl::class_<Clusterer> bind_em_clusterer(const char * name)
 
 void make_em_clusterer_bindings()
 {
-/*    bind_em_clusterer<
-        estimation::naive_bayes_estimator,
-        feature_selection::information_gain_selector
-    >("NaiveBayesEmClusterer");
-
     typedef em_clusterer<
         features::dense_features,
-        estimation::gaussian_estimator> est_t;
+        estimation::gaussian_estimator> dense_clusterer_t;
 
-    bind_em_clusterer< em_clusterer<
-        features::dense_features,
-        estimation::gaussian_estimator>
-    >("DenseGaussEmClusterer")
-    .def("transform_features", &est_t::transform_features<
-        feature_transform::random_projector_transform>)
-    .def("transform_features", &est_t::transform_features<
-        feature_transform::chained_transform<
-            feature_transform::random_projector_transform,
-            feature_transform::random_projector_transform> >);
-*/
+    bind_em_clusterer<dense_clusterer_t>("DenseGaussEmClusterer");
 
     typedef em_clusterer<
         features::sparse_features,

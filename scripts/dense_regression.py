@@ -1,59 +1,48 @@
 
-from cluster import DenseGaussEmClusterer as Clusterer
-from cluster.estimation import GaussianEstimator as Estimator
-from cluster import DenseFeatures as Features
+import math
+import sys
+import getty
 
 from OpenGL.GLUT import * 
 from OpenGL.GL import * 
 from OpenGL.GLU import *
 
-import urllib
-import random
-import math
-import sys
-import re
-import os
+import vinz.module
+from vinz.cluster import Clusterer
+from vinz.feature_transform import FeatureTransform
+from vinz.clustering_coordinator import ClusteringCoordinator
 
-clus = Clusterer()
 
-fixed = set()
+inj = vinz.module.Module().configure(getty.Injector())
 
-items = {} 
-estimators = {}
-n_classes = len(sys.argv) - 1
+clusterer = inj.get_instance(
+    vinz.cluster.Clusterer, annotation = 'dense_passthrough')
+feature_transform = inj.get_instance(
+    vinz.feature_transform.FeatureTransform, annotation = 'dense_passthrough')
 
-for c_ind in xrange(n_classes):
-    uid = 'class_%d' % c_ind
-    estimators[uid] = Estimator(2)
-    clus.add_cluster('class_%d' % c_ind, estimators[uid])
+coord = ClusteringCoordinator(clusterer, feature_transform, inj)
+
+sample_positions = {}
 
 for c_ind, dataset in enumerate(sys.argv[1:]):
 
-    c_uid = 'class_%d' % c_ind
+    clus_name = 'class_%d' % c_ind
+    coord.add_cluster(clus_name)
 
     for l_ind, line in enumerate(open(dataset)):
 
-        mem = {}
-        for i in xrange(n_classes):
-            mem['class_%d' % i] = [0, False]
-
-        #random.choice(mem.values())[0] = random.random()
+        if l_ind < 2:
+            mem = {clus_name: (1, True)}
+        else:
+            mem = {}
 
         d_uid = 'class_%d_%d' % (c_ind, l_ind)
 
-        if l_ind < 5:
-            fixed.add(d_uid)
-            mem[c_uid] = [1, True]
-        
         x, y = [float(i) for i in line.split()]
 
-        clus.add_sample(
-            d_uid,
-            Features([x, y]),
-            mem,
-        )
+        sample_positions[d_uid] = (x, y)
 
-        items[d_uid] = c_uid
+        coord.add_sample(d_uid, 'dense_passthrough', 1, mem, features = [x, y])
 
 color = {
     'class_0': (1.0, 0.0, 0.0, 0.3),
@@ -67,7 +56,7 @@ color = {
 
 def draw_clusters():
     
-    for c_uid, est in estimators.items():
+    for c_uid, est in coord._estimators.items():
 
         glPushMatrix()
 
@@ -94,13 +83,8 @@ def draw_samples():
 
     glBegin(GL_POINTS)
 
-    for s_uid in items:
+    for s_uid, p, probs in coord.sample_state():
 
-        pos = clus.get_estimator_features(s_uid).as_list()
-
-        probs = clus.get_sample_probabilities(s_uid)
-
-        p = clus.get_sample_likelihood(s_uid)
         cur_color = [0, 0, 0, math.exp(-100 * p)]
         for c_uid, (weight, hard) in probs.items():
             t = color[c_uid]
@@ -110,12 +94,12 @@ def draw_samples():
 
         glColor(*cur_color)
 
-        glVertex3f(pos[0], pos[1], 0)
+        x, y = sample_positions[s_uid]
+        glVertex3f(x, y, 0)
 
     glEnd()
 
 def draw():
-
 
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
     glPushMatrix()
@@ -129,20 +113,38 @@ def draw():
 
 def keyboard(*args):
 
-
     if args[0] == ' ':
-        print "entropy: %f" % clus.expect_and_maximize()
+        print "entropy: %f" % coord.expect_and_maximize()
 
     if args[0] == 'a':
-        li, s_uid = min( (clus.get_sample_likelihood(i), i) for i in items if i not in fixed)
-        print li, s_uid, len(fixed)
 
-        fixed.add(s_uid)
+        min_li, min_uid, min_probs, min_cur_clus, min_act_clus = \
+            None, None, None, None, None
 
-        feat = clus.get_estimator_features(s_uid) 
+        for cur_uid, cur_li, probs in coord.sample_state():
 
-        clus.drop_sample(s_uid)
-        clus.add_sample(s_uid, feat, {items[s_uid]: (1, True)})
+            # it's already fixed
+            if any(i[1] for i in probs.values()):
+                continue
+
+            if min_li is None or cur_li < min_li:
+                min_uid = cur_uid
+                min_li = cur_li
+                min_probs = probs
+
+                min_cur_clus = max((j, i) for i, j in probs.items())[1]
+                min_act_clus = 'class_%s' % cur_uid.split('_')[1]
+
+        print min_uid, min_li
+
+        min_probs[min_act_clus] = (1, True)
+        x, y = sample_positions[min_uid]
+        coord.drop_sample(min_uid)
+        coord.add_sample(min_uid, 'dense_passthrough', 1,
+            min_probs, features = [x, y])
+
+        coord.anneal_cluster(min_cur_clus)
+        coord.anneal_cluster(min_act_clus)
 
     draw()
 
@@ -164,7 +166,7 @@ def run(name):
     glEnable(GL_CULL_FACE)
     glEnable(GL_DEPTH_TEST)
 
-    print "entropy: %f" % clus.expect_and_maximize()
+    print "entropy: %f" % coord.expect_and_maximize()
     glutDisplayFunc(draw)
     glutKeyboardFunc(keyboard)
 

@@ -1,11 +1,12 @@
 
+import getty
+
 import vinz
 import vinz.featurization.basic_featurize
 import vinz.normalization.basic_normalize
 import vinz.normalization.twitter_normalize
 import vinz.estimation
 import vinz.feature_transform
-import getty
 
 def bootstrap():
 

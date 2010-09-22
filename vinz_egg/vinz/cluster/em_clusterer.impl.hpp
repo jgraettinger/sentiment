@@ -141,6 +141,7 @@ namespace {
 template<typename InputFeatures, typename Estimator>
 void em_clusterer<InputFeatures, Estimator>::add_sample(
     const string & uid,
+    const double & weight,
     const typename input_features_t::ptr_t & input_feat,
     const sample_cluster_state_t & cluster_probs)
 {
@@ -153,6 +154,7 @@ void em_clusterer<InputFeatures, Estimator>::add_sample(
     sample.prob_class_sample.resize(_clusters.size(), 0);
     sample.prob_sample_class.resize(_clusters.size(), 0);
     sample.is_hard.resize(_clusters.size(), false);
+    sample.weight = weight;
 
     sample.input_features = input_feat;
 

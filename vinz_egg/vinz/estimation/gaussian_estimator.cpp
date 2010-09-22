@@ -8,7 +8,7 @@ void make_gaussian_estimator_bindings()
 {
     bpl::class_<gaussian_estimator,
         gaussian_estimator::ptr_t, boost::noncopyable>(
-        "GaussianEstimator", bpl::init<unsigned>(bpl::args("n_features")))
+        "GaussianEstimator", bpl::init<>())
         .def("reset", &gaussian_estimator::reset)
         .def("add_observation", &gaussian_estimator::add_observation)
         .def("prepare_estimator", &gaussian_estimator::prepare_estimator)

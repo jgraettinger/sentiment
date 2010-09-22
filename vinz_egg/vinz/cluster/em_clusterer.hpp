@@ -35,6 +35,7 @@ public:
 
     void add_sample(
         const std::string & uid,
+        const double & weight,
         const typename input_features_t::ptr_t & feat,
         // {'cluster-uid': (P(c|s), is-hard)}
         const sample_cluster_state_t & cluster_probs
@@ -68,6 +69,9 @@ private:
 
         // whether P(cluster|sample) is 'hard'
         std::vector<bool> is_hard;
+
+        // relative weight of sample, as compared to peers
+        double weight;
 
         typename input_features_t::ptr_t   input_features;
         typename estimator_features_t::ptr_t est_features;

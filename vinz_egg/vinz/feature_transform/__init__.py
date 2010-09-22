@@ -1,7 +1,11 @@
+
+import getty
+
 from _feature_transform import *
 del _feature_transform
 
-import getty
+# injection key
+class FeatureTransform: pass
 
 getty.Extension(InformationGainStatistic).requires(
     class_smoothing_factor = getty.Config('class_smoothing_factor'))
@@ -38,6 +42,19 @@ getty.Extension(PCAIGainCutoffTransform).requires(
     igain_cutoff_transform = IGainCutoffTransform,
     pca_proj_transform = PCAProjTransform)
 
-# injection key
-class FeatureSelector: pass
+# 'is_static' is a meta-property which indicates whether the
+#   transform is affected by cluster membership probabilities.
+# Some transforms (such as PCA) use only the feature-space,
+#   and therefore any re-training of the transform after the
+#   probability space shifts is wasted effort.
+# Other transforms (such as information gain) need to be
+#   regularly retrained on updated membership probabilities.
+
+IGainCutoffTransform.is_static = False
+RandomProjTransform.is_static = True
+ProjIGainCutoffTransform.is_static = False
+CompactIGainCutoffTransform.is_static = False
+PCAProjTransform.is_static = True
+PCAProjIGainCutoffTransform.is_static = False
+PCACompactIGainCutoffTransform.is_static = False
 

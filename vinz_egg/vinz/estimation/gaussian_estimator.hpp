@@ -19,18 +19,14 @@ public:
 
     typedef features::dense_features features_t; 
 
-    gaussian_estimator(unsigned n_features)
-     : _n_features(n_features),
-       _soft_prob_coeff(1.0),
-       _mean(n_features),
-       _covar(n_features, n_features),
-       _inv_covar(n_features, n_features)
+    gaussian_estimator()
+     : _n_features(0),
+       _soft_prob_coeff(1.0)
     { reset(); }
 
     void reset()
     {
-        _mean.zeros();
-        _covar.zeros();
+        _n_features = 0;
 
         _sample_mass = 0;
         _samples.clear();
@@ -39,6 +35,21 @@ public:
     void add_observation(
         const features_t::ptr_t & feat, double prob_class_sample, bool is_hard)
     {
+        if(!_n_features)
+        {
+            // first observation since a reset; resize
+            //   and zero mean vector & covar matrix
+            _n_features = feat->n_cols;
+
+            // in the common case, no memory
+            //   is release or aquired here
+            _mean.set_size(_n_features);
+            _mean.zeros();
+
+            _covar.set_size(_n_features, _n_features);
+            _covar.zeros();
+        }
+
         if(feat->n_cols != _n_features)
             throw std::runtime_error("arity mismatch");
 
@@ -48,6 +59,7 @@ public:
         if(!is_hard)
             prob_class_sample *= _soft_prob_coeff;
 
+        // add contribution into total amount of sample mass
         _sample_mass += prob_class_sample;
 
         // add into cluster mean
@@ -178,7 +190,7 @@ public:
 
 private:
 
-    const unsigned _n_features;
+    unsigned _n_features;
 
     // Ratio which controls how strongly 'soft' (expected)
     //  probability factors into the estimation, relative to
