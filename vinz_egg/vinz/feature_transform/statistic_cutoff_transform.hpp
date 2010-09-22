@@ -7,6 +7,7 @@
 #include <boost/shared_ptr.hpp>
 
 #include <iostream>
+#include <algorithm>
 
 namespace feature_transform {
 
@@ -22,9 +23,9 @@ public:
     typedef typename statistic_provider_t::feature_stat_t feature_stat_t;
 
     statistic_cutoff_transform(
-        unsigned min_features,
+        size_t min_features,
         double max_mass_ratio,
-        unsigned max_features,
+        size_t max_features,
         const statistic_provider_t & stat_provider)
      : 
         statistic_provider_t(stat_provider),
@@ -65,14 +66,14 @@ public:
             std::cout << stat_sum << " stat sum, ";
 
             double   cur_sum = 0;
-            unsigned cur_count = 0;
+            size_t cur_count = 0;
 
-            unsigned max_features = std::min(
+            size_t max_features = std::min(
                 self->_max_features, feat_stats.size());
 
             while(cur_count != max_features)
             {
-                unsigned next_count = std::min(
+                size_t next_count = std::min(
                     max_features, cur_count + 100);
 
                 std::partial_sort(
@@ -148,7 +149,7 @@ public:
 
             for(; it != end; ++it)
             {
-                unsigned f_id = features::deref_id(it);
+                size_t f_id = features::deref_id(it);
                 double  f_val = features::deref_value(it);
 
                 if(self->_feat_index.find(f_id) == self->_feat_index.end())
@@ -172,11 +173,11 @@ private:
         { return f1.second > f2.second; }
     };
 
-    unsigned _min_features;
+    size_t _min_features;
     double _max_mass_ratio;
-    unsigned _max_features;
+    size_t _max_features;
 
-    boost::unordered_set<unsigned> _feat_index;
+    boost::unordered_set<size_t> _feat_index;
 };
 
 };
