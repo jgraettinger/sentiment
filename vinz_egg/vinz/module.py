@@ -5,9 +5,10 @@ import vinz.estimation
 import vinz.feature_transform
 import vinz.features
 import vinz.cluster
-import vinz.featurization.basic_featurize
 import vinz.normalization.basic_normalize
+import vinz.normalization.newswire_normalize
 import vinz.normalization.twitter_normalize
+import vinz.featurization.basic_featurize
 
 class Module(object):
 
@@ -18,19 +19,27 @@ class Module(object):
             scope = getty.Singleton)
 
         # twitter sample type
-        binder.bind(vinz.featurization.Featurizer,
-            to = vinz.featurization.basic_featurize.TfFeaturizer,
-            with_annotation = 'twitter', scope = getty.Singleton)
         binder.bind(vinz.normalization.Normalizer,
             to = vinz.normalization.twitter_normalize.TwitterNormalizer,
             with_annotation = 'twitter', scope = getty.Singleton)
+        binder.bind(vinz.featurization.Featurizer,
+            to = vinz.featurization.basic_featurize.TfFeaturizer,
+            with_annotation = 'twitter', scope = getty.Singleton)
+
+        # reuters sample type
+        binder.bind(vinz.normalization.Normalizer,
+            to = vinz.normalization.newswire_normalize.NewswireNormalizer,
+            with_annotation = 'reuters', scope = getty.Singleton)
+        binder.bind(vinz.featurization.Featurizer,
+            to = vinz.featurization.basic_featurize.TfFeaturizer,
+            with_annotation = 'reuters', scope = getty.Singleton)
 
         # dense_passthrough sample type
-        binder.bind(vinz.featurization.Featurizer,
-            to = vinz.featurization.basic_featurize.PassthroughDenseFeaturizer,
-            with_annotation = 'dense_passthrough', scope = getty.Singleton)
         binder.bind(vinz.normalization.Normalizer,
             to = vinz.normalization.basic_normalize.NoOpNormalizer,
+            with_annotation = 'dense_passthrough', scope = getty.Singleton)
+        binder.bind(vinz.featurization.Featurizer,
+            to = vinz.featurization.basic_featurize.PassthroughDenseFeaturizer,
             with_annotation = 'dense_passthrough', scope = getty.Singleton)
 
         # web_document clustering configuration

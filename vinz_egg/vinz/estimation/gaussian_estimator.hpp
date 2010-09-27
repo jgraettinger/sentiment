@@ -74,8 +74,8 @@ public:
         // normalize to obtain MLE mean
         _mean = _mean * (1.0 / _sample_mass);
 
-//        _mean.print("mean: ");
-//        std::cout << std::endl;
+        _mean.print("mean: ");
+        std::cout << std::endl;
 
         double sq_std_dev = 0;
 
@@ -122,7 +122,6 @@ public:
         // return entropy of the distribution
         return std::log( std::sqrt(scaled_det * std::pow(M_E, _n_features)));
 
-/*
         /// debug
         std::cout << "scaled_det:\n  " << scaled_det << std::endl;
 
@@ -134,7 +133,6 @@ public:
         _svd_V.print("V: ");
 
         std::cout << "gauss norm:\n  " << _gauss_norm << std::endl;
-*/
     }
 
     double estimate(const features_t::ptr_t & fptr)

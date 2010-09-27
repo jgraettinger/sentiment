@@ -148,7 +148,7 @@ void em_clusterer<InputFeatures, Estimator>::add_sample(
     if(_samples.find(uid) != _samples.end())
         throw runtime_error("duplicate sample UID " + uid);
 
-    sample_t & sample( _samples[uid]);
+    sample_t & sample(_samples[uid]);
 
     // init probability state
     sample.prob_class_sample.resize(_clusters.size(), 0);
@@ -161,6 +161,19 @@ void em_clusterer<InputFeatures, Estimator>::add_sample(
     // iff types are the same, set est_features to input_features
     _est_features_init< boost::is_same<input_features_t, estimator_features_t
         >::value>()(sample.est_features, input_feat);
+
+    set_sample_probabilities(uid, cluster_probs);
+}
+
+template<typename InputFeatures, typename Estimator>
+void em_clusterer<InputFeatures, Estimator>::set_sample_probabilities(
+    const std::string & uid, const sample_cluster_state_t & cluster_probs)
+{
+    typename samples_t::iterator s_it = _samples.find(uid);
+    if(s_it == _samples.end())
+        throw runtime_error("no sample with UID " + uid);
+
+    sample_t & sample(s_it->second);
 
     // iterate over (cluster-uid, (P(class | sample), is-hard))
     for(sample_cluster_state_t::const_iterator s_it = cluster_probs.begin();
@@ -177,40 +190,26 @@ void em_clusterer<InputFeatures, Estimator>::add_sample(
         sample.prob_class_sample[ind] = s_it->second.first;
         sample.is_hard[ind] = s_it->second.second;
     }
-
     sample.norm_class_probs();
-    return;
 }
 
-template<typename InputFeatures, typename Estimator>
-void em_clusterer<InputFeatures, Estimator>::drop_sample(
-    const string & uid)
-{
-    typename samples_t::iterator s_it = _samples.find(uid);
-
-    if(s_it == _samples.end())
-        throw runtime_error("no sample with UID " + uid);
-
-    _samples.erase(s_it);
-    return;
-}
 
 template<typename InputFeatures, typename Estimator>
 typename em_clusterer<InputFeatures, Estimator>::sample_cluster_state_t
 em_clusterer<InputFeatures, Estimator>::get_sample_probabilities(
     const string & uid)
 {
-    if(_samples.find(uid) == _samples.end())
+    typename samples_t::iterator s_it = _samples.find(uid);
+    if(s_it == _samples.end())
         throw runtime_error("no sample with UID " + uid);
 
-    sample_t & sample = _samples[uid];
-
-    sample_cluster_state_t probs;
+    sample_t & sample(s_it->second);
 
     vector<string>::const_iterator it1 = _clusters.begin();
     vector<double>::const_iterator it2 = sample.prob_class_sample.begin();
     vector<bool>::const_iterator   it3 = sample.is_hard.begin();
 
+    sample_cluster_state_t probs;
     for(; it1 != _clusters.end(); ++it1, ++it2, ++it3)
     {
         probs[*it1] = make_pair(*it2, *it3);
@@ -219,24 +218,10 @@ em_clusterer<InputFeatures, Estimator>::get_sample_probabilities(
 }
 
 template<typename InputFeatures, typename Estimator>
-typename em_clusterer<InputFeatures, Estimator>::estimator_features_t::ptr_t
-em_clusterer<InputFeatures, Estimator>::get_estimator_features(
-    const string & uid)
-{
-    typename samples_t::iterator it = _samples.find(uid);
-
-    if(it == _samples.end())
-        throw runtime_error("no sample with UID " + uid);
-
-    return it->second.est_features;
-}
-
-template<typename InputFeatures, typename Estimator>
 double em_clusterer<InputFeatures, Estimator>::get_sample_likelihood(
     const string & uid)
 {
     typename samples_t::iterator it = _samples.find(uid);
-
     if(it == _samples.end())
         throw runtime_error("no sample with UID " + uid);
 
@@ -244,11 +229,34 @@ double em_clusterer<InputFeatures, Estimator>::get_sample_likelihood(
 }
 
 template<typename InputFeatures, typename Estimator>
+typename em_clusterer<InputFeatures, Estimator>::estimator_features_t::ptr_t
+em_clusterer<InputFeatures, Estimator>::get_estimator_features(
+    const string & uid)
+{
+    typename samples_t::iterator it = _samples.find(uid);
+    if(it == _samples.end())
+        throw runtime_error("no sample with UID " + uid);
+
+    return it->second.est_features;
+}
+
+template<typename InputFeatures, typename Estimator>
+void em_clusterer<InputFeatures, Estimator>::drop_sample(
+    const string & uid)
+{
+    typename samples_t::iterator s_it = _samples.find(uid);
+    if(s_it == _samples.end())
+        throw runtime_error("no sample with UID " + uid);
+
+    _samples.erase(s_it);
+}
+
+template<typename InputFeatures, typename Estimator>
 template<typename FeatureTransform>
-unsigned em_clusterer<InputFeatures, Estimator>::transform_features(
+void em_clusterer<InputFeatures, Estimator>::transform_features(
     const typename FeatureTransform::ptr_t & feature_transform)
 {
-    // extractor of sample features from samples_t value
+    // extractor of sample input features from samples_t value_type
     boost::function<
         const typename InputFeatures::ptr_t & (
             const typename samples_t::value_type &)
@@ -256,7 +264,7 @@ unsigned em_clusterer<InputFeatures, Estimator>::transform_features(
         boost::bind( &sample_t::input_features,
             boost::bind( &samples_t::value_type::second, boost::lambda::_1)));
 
-    // extractor of sample probability from samples_t value
+    // extractor of sample P(class|sample) vector from samples_t value_type
     boost::function<
         const std::vector<double> & (
             const typename samples_t::value_type &)
@@ -285,9 +293,6 @@ unsigned em_clusterer<InputFeatures, Estimator>::transform_features(
 
         sample.est_features = do_transform(sample.input_features);
     }
-
-    // return number of active features
-    return 0;
 }
 
 template<typename InputFeatures, typename Estimator>
@@ -311,14 +316,16 @@ double em_clusterer<InputFeatures, Estimator>::expect_and_maximize()
             // feed features & P(class | sample) to estimators
             for(size_t i = 0; i != num_clusters; ++i)
             {
-                _estimators[i]->add_observation(
-                    sample.est_features,
-                    sample.prob_class_sample[i],
-                    sample.is_hard[i]);
+                // factor sample weight into effective class probability
+                double p_class = sample.prob_class_sample[i] * sample.weight;
 
-                // while we're here, sum cluster mass
-                // P(c) = sum{ P(c|s) for s in S}
-                cluster_prob[i] += sample.prob_class_sample[i];
+                // inform estimator of this observation
+                _estimators[i]->add_observation(
+                    sample.est_features, p_class, sample.is_hard[i]);
+
+                // while we're here, sum effective cluster probability mass
+                //   P(c) = sum{ P(c|s) for s in S}
+                cluster_prob[i] += p_class;
             }
         }
     }
@@ -362,7 +369,7 @@ double em_clusterer<InputFeatures, Estimator>::expect_and_maximize()
             sample.prob_sample_class[i] = \
                 _estimators[i]->estimate(sample.est_features);
 
-            // P(class|sample) = P(sample|class) * P(class) / P(sample)
+            // P(class & sample) = P(sample|class) * P(class)
             double p_sample = sample.prob_sample_class[i] * cluster_prob[i];
 
             sample.prob_sample += p_sample;
@@ -372,6 +379,7 @@ double em_clusterer<InputFeatures, Estimator>::expect_and_maximize()
 
             sample.prob_class_sample[i] = p_sample;
         }
+        // P(class|sample) = P(sample & class) / P(sample)
         sample.norm_class_probs();
     }
 

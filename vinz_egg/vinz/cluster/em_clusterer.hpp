@@ -41,19 +41,21 @@ public:
         const sample_cluster_state_t & cluster_probs
     );
 
-    void drop_sample(const std::string & uid);
+    void set_sample_probabilities(
+        const std::string & uid, const sample_cluster_state_t & cluster_probs);
 
     sample_cluster_state_t get_sample_probabilities(
         const std::string & sample_uid);
 
+    double get_sample_likelihood(const std::string & uid);
+
     typename estimator_features_t::ptr_t get_estimator_features(
         const std::string & sample_uid);
 
-    double get_sample_likelihood(const std::string & uid);
+    void drop_sample(const std::string & uid);
 
     template<typename FeatureTransform>
-    unsigned transform_features(
-        const typename FeatureTransform::ptr_t &);
+    void transform_features(const typename FeatureTransform::ptr_t &);
 
     double expect_and_maximize();
 
@@ -67,7 +69,8 @@ private:
         // P(class | sample)
         std::vector<double> prob_class_sample;
 
-        // whether P(cluster|sample) is 'hard'
+        // whether P(cluster|sample) is fixed in place, or
+        //  may be adjusted during the expectation step
         std::vector<bool> is_hard;
 
         // relative weight of sample, as compared to peers

@@ -24,6 +24,9 @@ class TfFeaturizer(object):
             else:
                 feat[t_id] += 1
 
+        norm = math.sqrt( sum(v * v for k, v in feat.items()))
+        feat = dict((k, v / norm) for (k, v) in feat.items())
+
         return SparseFeatures(feat)
 
 

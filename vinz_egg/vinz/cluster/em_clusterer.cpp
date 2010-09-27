@@ -19,11 +19,12 @@ bpl::class_<Clusterer> bind_em_clusterer(const char * name)
     .def("add_cluster", &Clusterer::add_cluster)
     .def("drop_cluster", &Clusterer::drop_cluster)
     .def("add_sample", &Clusterer::add_sample)
-    .def("drop_sample", &Clusterer::drop_sample)
+    .def("set_sample_probabilities", &Clusterer::set_sample_probabilities)
     .def("get_sample_probabilities", &Clusterer::get_sample_probabilities)
+    .def("get_sample_likelihood", &Clusterer::get_sample_likelihood)
     .def("get_estimator_features", &Clusterer::get_estimator_features)
-    .def("expect_and_maximize", &Clusterer::expect_and_maximize)
-    .def("get_sample_likelihood", &Clusterer::get_sample_likelihood);
+    .def("drop_sample", &Clusterer::drop_sample)
+    .def("expect_and_maximize", &Clusterer::expect_and_maximize);
 }
 
 void make_em_clusterer_bindings()

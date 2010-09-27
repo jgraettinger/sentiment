@@ -56,7 +56,7 @@ setuptools.setup(
     name = 'Vinz',
     version = '0.1',
     packages = ['vinz'],
-    scripts = ['interactive_clusterer.py'],
+    scripts = ['scripts/run_regression.py'],
 
     install_requires = [
         'nose',
