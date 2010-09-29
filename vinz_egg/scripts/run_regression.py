@@ -57,9 +57,6 @@ for class_id in sys.argv[4:]:
         class_sample_size[class_id] += 1.0
 
 
-#for uid in sample_classes:
-#    print coord._clusterer.get_sample_probabilities(uid)
-
 def iterate_and_report():
 
     global sample_classes, class_sample_size, coord

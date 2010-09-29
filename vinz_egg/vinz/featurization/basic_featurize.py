@@ -24,6 +24,8 @@ class TfFeaturizer(object):
             else:
                 feat[t_id] += 1
 
+        feat = dict((k, math.log(v) + 1) for k, v in feat.items())
+
         norm = math.sqrt( sum(v * v for k, v in feat.items()))
         feat = dict((k, v / norm) for (k, v) in feat.items())
 

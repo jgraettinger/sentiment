@@ -71,7 +71,7 @@ class Module(object):
         binder.bind_instance(getty.Config,
             with_annotation = 'n_rand_output_features', to = 300)
         binder.bind_instance(getty.Config,
-            with_annotation = 'n_pca_output_features', to = 50)
+            with_annotation = 'n_pca_output_features', to = 25)
         binder.bind_instance(getty.Config,
             with_annotation = 'soft_prob_coeff_init', to = 0.05)
         binder.bind_instance(getty.Config,

@@ -56,7 +56,9 @@ setuptools.setup(
     name = 'Vinz',
     version = '0.1',
     packages = ['vinz'],
-    scripts = ['scripts/run_regression.py'],
+    scripts = [
+        'scripts/run_regression.py',
+        'scripts/plot_estimator_features.py'],
 
     install_requires = [
         'nose',

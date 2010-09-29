@@ -56,5 +56,6 @@ ProjIGainCutoffTransform.is_static = False
 CompactIGainCutoffTransform.is_static = False
 PCAProjTransform.is_static = True
 PCAProjIGainCutoffTransform.is_static = False
+PCAIGainCutoffTransform.is_static = False
 PCACompactIGainCutoffTransform.is_static = False
 

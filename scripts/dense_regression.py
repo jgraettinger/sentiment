@@ -19,28 +19,24 @@ clusterer = inj.get_instance(
     vinz.cluster.Clusterer, annotation = 'dense_passthrough')
 feature_transform = inj.get_instance(
     vinz.feature_transform.FeatureTransform, annotation = 'dense_passthrough')
-
 coord = ClusteringCoordinator(clusterer, feature_transform, inj)
 
-sample_positions = {}
 
 for c_ind, dataset in enumerate(sys.argv[1:]):
 
-    clus_name = 'class_%d' % c_ind
-    coord.add_cluster(clus_name)
+    class_id = 'class_%d' % c_ind
+    coord.add_cluster(class_id)
 
     for l_ind, line in enumerate(open(dataset)):
 
         if l_ind < 2:
-            mem = {clus_name: (1, True)}
+            mem = {class_id: (1, True)}
         else:
             mem = {}
 
         d_uid = 'class_%d_%d' % (c_ind, l_ind)
 
         x, y = [float(i) for i in line.split()]
-
-        sample_positions[d_uid] = (x, y)
 
         coord.add_sample(d_uid, 'dense_passthrough', 1, mem, features = [x, y])
 
@@ -52,11 +48,12 @@ color = {
     'class_4': (0.0, 0.5, 0.5, 0.3),
     'class_5': (0.5, 0.0, 0.5, 0.3),
     'class_6': (0.3, 0.3, 0.3, 0.3),
+    'class_7': (0.2, 0.3, 0.4, 0.3),
 }
 
 def draw_clusters():
     
-    for c_uid, est in coord._estimators.items():
+    for c_uid, est in coord.estimators.items():
 
         glPushMatrix()
 
@@ -71,7 +68,7 @@ def draw_clusters():
 
         glTranslate(pos[0], pos[1], 0)
         glRotate(angle, 0, 0, 1)
-        glScale( math.sqrt(s0), math.sqrt(s1), 0.1)
+        glScale(math.sqrt(s0), math.sqrt(s1), 0.1)
 
         glColor(*color[c_uid])
 
@@ -85,7 +82,14 @@ def draw_samples():
 
     for s_uid, p, probs in coord.sample_state():
 
-        cur_color = [0, 0, 0, math.exp(-100 * p)]
+        is_fixed = any(i[1] for i in probs.values())
+
+        if is_fixed:
+            cur_color = [0, 0, 0, 1]
+        else:
+            # color-strength inverse to likelihood
+            cur_color = [0, 0, 0, 0.5 * math.exp(-100 * p)]
+
         for c_uid, (weight, hard) in probs.items():
             t = color[c_uid]
             cur_color[0] += t[0] * weight
@@ -94,7 +98,7 @@ def draw_samples():
 
         glColor(*cur_color)
 
-        x, y = sample_positions[s_uid]
+        x, y = coord.clusterer.get_estimator_features(s_uid).as_list()
         glVertex3f(x, y, 0)
 
     glEnd()
@@ -118,8 +122,8 @@ def keyboard(*args):
 
     if args[0] == 'a':
 
-        min_li, min_uid, min_probs, min_cur_clus, min_act_clus = \
-            None, None, None, None, None
+        min_li, min_uid, min_cur_clus, min_act_clus = \
+            None, None, None, None
 
         for cur_uid, cur_li, probs in coord.sample_state():
 
@@ -127,24 +131,27 @@ def keyboard(*args):
             if any(i[1] for i in probs.values()):
                 continue
 
+            cur_clus = max((j, i) for i, j in probs.items())[1]
+            act_clus = 'class_%s' % cur_uid.split('_')[1]
+
+            # not misclassified
+            if cur_clus == act_clus:
+                continue
+
             if min_li is None or cur_li < min_li:
                 min_uid = cur_uid
                 min_li = cur_li
-                min_probs = probs
-
-                min_cur_clus = max((j, i) for i, j in probs.items())[1]
-                min_act_clus = 'class_%s' % cur_uid.split('_')[1]
+                min_cur_clus = cur_clus
+                min_act_clus = act_clus
 
         print min_uid, min_li
 
-        min_probs[min_act_clus] = (1, True)
-        x, y = sample_positions[min_uid]
-        coord.drop_sample(min_uid)
-        coord.add_sample(min_uid, 'dense_passthrough', 1,
-            min_probs, features = [x, y])
+        coord.clusterer.set_sample_probabilities(
+            min_uid, {min_act_clus: (1, True)})
 
-        coord.anneal_cluster(min_cur_clus)
-        coord.anneal_cluster(min_act_clus)
+        if min_act_clus != min_cur_clus:
+            coord.anneal_cluster(min_cur_clus)
+            coord.anneal_cluster(min_act_clus)
 
     draw()
 
