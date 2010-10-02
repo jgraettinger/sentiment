@@ -5,6 +5,7 @@ import clustering_document
 import cluster
 import cluster_document
 import secure_token
+import static_resource_tree
 
 import zuul.wsgi_route
 import getty
@@ -22,5 +23,6 @@ class DispatchMapping(object):
         cluster.bind_actions(dispatcher)
         cluster_document.bind_actions(dispatcher)
         secure_token.bind_actions(dispatcher)
+        static_resource_tree.bind_actions(dispatcher)
         return
 

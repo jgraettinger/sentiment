@@ -206,7 +206,7 @@ struct pca_projector_transform::train_transform<features::sparse_features>
                 mean[f_it->first] += f_it->second;
         }
 
-        std::cout << inputs.size() << " input features" << std::endl;
+//        std::cout << inputs.size() << " input features" << std::endl;
 
         // inner product of mean vector against itself
         double dot_mean = 0;
@@ -226,7 +226,8 @@ struct pca_projector_transform::train_transform<features::sparse_features>
             std::cout << it->first << ": " << it->second << ", ";
         }
         std::cout << std::endl;
-*/        std::cout << "dot(mean, mean): " << dot_mean << std::endl;
+        std::cout << "dot(mean, mean): " << dot_mean << std::endl;
+*/
 
         // build covariance of samples (eg, scatter matrix)
         self->_covar = arma::eye(inputs.size(), inputs.size());
@@ -239,8 +240,8 @@ struct pca_projector_transform::train_transform<features::sparse_features>
             }
         }
 
-        std::cout << "build covar, " << self->_covar.n_rows << ", ";
-        std::cout << self->_covar.n_cols << std::endl;
+//        std::cout << "build covar, " << self->_covar.n_rows << ", ";
+//        std::cout << self->_covar.n_cols << std::endl;
 //        self->_covar.print(std::cout, "covar-matrix");
 
         // Perform SVD over co-variance matrix
@@ -248,7 +249,7 @@ struct pca_projector_transform::train_transform<features::sparse_features>
             throw std::runtime_error("SVD decomposition failed");
 
 //        self->_svd_U.print(std::cout, "SVD-U");
-        self->_svd_s.print(std::cout, "SVD-s");
+//        self->_svd_s.print(std::cout, "SVD-s");
 //        self->_svd_V.print(std::cout, "SVD-V");
 
         self->_sparse_eigvecs.resize(self->_n_output_features);

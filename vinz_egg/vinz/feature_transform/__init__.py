@@ -1,8 +1,9 @@
 
 import getty
 
+import _feature_transform
 from _feature_transform import *
-del _feature_transform
+#del _feature_transform
 
 # injection key
 class FeatureTransform: pass

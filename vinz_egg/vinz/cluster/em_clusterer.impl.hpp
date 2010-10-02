@@ -313,6 +313,10 @@ double em_clusterer<InputFeatures, Estimator>::expect_and_maximize()
         {
             const sample_t & sample( it->second);
 
+            if(!sample.est_features)
+                throw runtime_error("expect_and_maximize(): "\
+                    "a feature transform must be run first");
+
             // feed features & P(class | sample) to estimators
             for(size_t i = 0; i != num_clusters; ++i)
             {
@@ -334,16 +338,16 @@ double em_clusterer<InputFeatures, Estimator>::expect_and_maximize()
     {
         vector_ops::normalize_L1(cluster_prob);
 
-        std::cout << "cluster priors: ";
+//        std::cout << "cluster priors: ";
         for(size_t i = 0; i != num_clusters; ++i)
         {
             // shift probability slightly back to even
             double avg_cluster_prob = 1.0 / num_clusters;
             cluster_prob[i] += 0.02 * (avg_cluster_prob - cluster_prob[i]);
 
-            std::cout << cluster_prob[i] << ", ";
+//            std::cout << cluster_prob[i] << ", ";
         }
-        std::cout << std::endl;
+//        std::cout << std::endl;
     }
 
     double entropy = 0;

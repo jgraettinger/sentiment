@@ -42,22 +42,20 @@ class Module(object):
             to = vinz.featurization.basic_featurize.PassthroughDenseFeaturizer,
             with_annotation = 'dense_passthrough', scope = getty.Singleton)
 
-        # web_document clustering configuration
+        # clusterer bindings
         binder.bind(vinz.cluster.Clusterer,
             to = vinz.cluster.SparseGaussEmClusterer,
-            with_annotation = 'web_document')
-        binder.bind(vinz.feature_transform.FeatureTransform,
-            to = vinz.feature_transform.PCAProjTransform,
-            with_annotation = 'web_document') 
-
-        # dense_passthrough clustering configuration
+            with_annotation = 'SparseGaussEmClusterer')
         binder.bind(vinz.cluster.Clusterer,
             to = vinz.cluster.DenseGaussEmClusterer,
-            with_annotation = 'dense_passthrough')
-        binder.bind_instance(vinz.feature_transform.FeatureTransform,
-            to = None, with_annotation = 'dense_passthrough')
+            with_annotation = 'DenseGaussEmClusterer')
 
-        # system parameters
+        # feature-transform bindings
+        binder.bind(vinz.feature_transform.FeatureTransform,
+            to = vinz.feature_transform.PCAProjTransform,
+            with_annotation = 'PCAProjTransform') 
+
+        # configuration parameters
         binder.bind_instance(getty.Config,
             with_annotation = 'alpha', to = 0.04)
         binder.bind_instance(getty.Config,

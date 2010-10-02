@@ -3,6 +3,7 @@ import sys
 import math
 import simplejson
 import sqlite3
+import optparse
 import getty
 
 import vinz.module
@@ -10,82 +11,35 @@ from vinz.cluster import Clusterer
 from vinz.feature_transform import FeatureTransform
 from vinz.clustering_coordinator import ClusteringCoordinator
 
-if len(sys.argv) < 6:
-    print "Usage: %s <regression-db> <clusterer-type> <feature-transform-type>"\
-        " <class-id> <class-id> ..." % sys.argv[0]
-    sys.exit(-1)
+N_ITERATIONS = 100
 
-db = sqlite3.connect(sys.argv[1], isolation_level = None)
-
-inj = vinz.module.Module().configure(getty.Injector())
-clusterer = inj.get_instance(
-    vinz.cluster.Clusterer, annotation = sys.argv[2])
-feature_transform = inj.get_instance(
-    vinz.feature_transform.FeatureTransform, annotation = sys.argv[3])
-coord = ClusteringCoordinator(clusterer, feature_transform, inj)
-
-# {sample-uid: [class-id]}
-sample_classes = {}
-# {class-id: # of samples}
-class_sample_size = {}
-
-for class_id in sys.argv[4:]:
-
-    print "Loading samples for class %s" % class_id
-    class_sample_size[class_id] = 0
-
-    coord.add_cluster(class_id)
-
-    for uid, type, weight, attributes in db.execute("""
-        select uid, type, weight, attributes from sample join sample_class on
-            uid = sample_uid and class_name = ?""", (class_id,)):
-
-        uid = str(uid)
-
-        if uid not in sample_classes:
-            sample_classes[uid] = []
-            attributes = simplejson.loads(attributes)
-
-            if class_sample_size[class_id] < 2:
-                s_prob = {class_id: (1.0, True)}
-            else:
-                s_prob = {}
-
-            coord.add_sample(uid, type, weight, s_prob, **attributes)
-
-        sample_classes[uid].append(class_id)
-        class_sample_size[class_id] += 1.0
-
-
-def iterate_and_report():
-
-    global sample_classes, class_sample_size, coord
+def iterate_and_report(coord, sample_classes, class_sample_size):
 
     entropy = coord.expect_and_maximize()
 
-    total_class_prob = dict((k, 0) for k in class_sample_size)
-    class_prec = dict((k, 0) for k in class_sample_size)
-    class_recall = dict((k, 0) for k in class_sample_size)
+    # stats over samples to track
+    prob, prec, recall = {}, {}, {}
+    for k in class_sample_size:
+        prob[k] = prec[k] = recall[k] = 0
 
     for uid, likelihood, class_probs in coord.sample_state():
 
         for class_id in sample_classes[uid]:
             # aggregate precision & recall
-            class_prec[class_id] += class_probs[class_id][0]
-            class_recall[class_id] += class_probs[class_id][0]
+            prec[class_id] += class_probs[class_id][0]
+            recall[class_id] += class_probs[class_id][0]
 
         # aggregate total class probability
-        for class_id, (prob, is_hard) in class_probs.items():
-            total_class_prob[class_id] += prob
+        for class_id, (class_prob, is_hard) in class_probs.items():
+            prob[class_id] += class_prob
 
     for class_id, n_samples in class_sample_size.items():
         # normalize precision by total class prob
-        class_prec[class_id] /= total_class_prob[class_id]
+        prec[class_id] /= prob[class_id]
         # normalize recall by # of class samples
-        class_recall[class_id] /= n_samples 
+        recall[class_id] /= n_samples 
 
-    return entropy, class_prec, class_recall
-
+    return entropy, prec, recall, prob
 
 def anneal():
 
@@ -116,15 +70,102 @@ def anneal():
 
     coord.anneal_cluster(min_cur_clus)
     coord.anneal_cluster(min_act_clus)
+    return
+
+def main(opts):
+
+    # Set up injector
+    inj = vinz.module.Module().configure(getty.Injector())
+
+    # Override specified configuration parameters
+    for conf in opts.config_overrides:
+        assert '=' in conf, "Configurations must be of form 'name = value'"
+
+        name, value = [i.strip() for i in conf.split('=')]
+        if value.isdigit():
+            value = int(value)
+        elif value.replace('.', '').isdigit():
+            value = float(value)
+
+        inj.bind_instance(getty.Config, with_annotation = name, to = value)
+
+    # Connect to regression database
+    db = sqlite3.connect(opts.regression_database, isolation_level = None)
+
+    # Obtain a clusterer instance
+    clusterer = inj.get_instance(
+        vinz.cluster.Clusterer, annotation = opts.clusterer_type)
+
+    # If given, obtain feature-transform instance
+    feature_transform = None
+    if opts.feature_transform:
+        feature_transform = inj.get_instance(
+            vinz.feature_transform.FeatureTransform,
+            annotation = opts.feature_transform)
+
+    coord = ClusteringCoordinator(clusterer, feature_transform, inj)
+
+    # {sample-uid: [class-id]}
+    sample_classes = {}
+    # {class-id: # of samples}
+    class_sample_size = {}
+
+    # Load classes & samples
+    for class_id in opts.classes:
+
+        class_sample_size[class_id] = 0
+        coord.add_cluster(class_id)
+
+        for uid, type, weight, attributes in db.execute("""
+            select uid, type, weight, attributes from sample join sample_class on
+                uid = sample_uid and class_name = ?""", (class_id,)):
+
+            uid = str(uid)
+            if uid not in sample_classes:
+                sample_classes[uid] = []
+                attributes = simplejson.loads(attributes)
+
+                # TODO: More principled initialization
+                if class_sample_size[class_id] < 2:
+                    s_prob = {class_id: (1.0, True)}
+                else:
+                    s_prob = {}
+
+                coord.add_sample(uid, type, weight, s_prob, **attributes)
+
+            sample_classes[uid].append(class_id)
+            class_sample_size[class_id] += 1.0
+
+        assert class_sample_size[class_id], "No samples w/ class %s" % class_id
+
+    # Run regression iterations
+    for i in xrange(N_ITERATIONS):
+        stats = iterate_and_report(coord, sample_classes, class_sample_size)
+        print simplejson.dumps(stats)
+
+    return
 
 
-N_ITERATIONS = 200
+opt_parser = optparse.OptionParser()
 
-for i in xrange(N_ITERATIONS):
+opt_parser.add_option('-d', '--database', action = 'store',
+    type = 'string', dest = 'regression_database')
+opt_parser.add_option('-c', '--clusterer', action = 'store',
+    type = 'string', dest = 'clusterer_type',
+    default = 'SparseGaussEmClusterer')
+opt_parser.add_option('-f', '--feature-transform', action = 'store',
+    type = 'string', dest = 'feature_transform')
+opt_parser.add_option('-n', '--class-name', action = 'append',
+    type = 'string', dest = 'classes', default = [])
+opt_parser.add_option('-o', '--config-override', action = 'append',
+    type = 'string', dest = 'config_overrides', default = [])
 
-    entropy, prec, recall = iterate_and_report()
+opts, _ = opt_parser.parse_args()
 
-    print prec, recall
+if not opts.regression_database:
+    opt_parser.error("Regression database must be provided")
+if not opts.classes or len(opts.classes) < 2:
+    opt_parser.error("At least two class-names are required")
 
-
+main(opts)
 
