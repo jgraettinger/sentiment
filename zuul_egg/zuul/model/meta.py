@@ -4,6 +4,8 @@ from document import Document
 from clustering_document import ClusteringDocument
 from cluster_document import ClusterDocument
 
+from regression import Regression
+
 import sqlalchemy as sa
 import sqlalchemy.orm
 import getty
@@ -27,6 +29,8 @@ class ORM(object):
         Document.define_orm_mapping(self)
         ClusteringDocument.define_orm_mapping(self)
         ClusterDocument.define_orm_mapping(self)
+
+        Regression.define_orm_mapping(self)
 
         # build tables
         self.meta.create_all(self.engine)

@@ -31,14 +31,12 @@
 <%def name="form_elements(req, doc)">
     <%
         m = model.flatten() if model else {}
-        title = req.str_POST.get('title', m.get('title', '')).decode('utf8')
-        author = req.str_POST.get('author', m.get('author', '').decode('utf8'))
-        content = req.str_POST.get('content', m.get('content', '').decode('utf8'))
+        m.update(req.str_POST)
+        m = dict((k, str(v).decode('utf8')) for k,v in m.items())
     %>
-    Title:   ${h.tags.text(name = 'title', value = title)}<br>
-    Author:  ${h.tags.text(name = 'author', value = author)}<br>
-    Content: ${h.tags.textarea(name = 'content', rows = "50", cols = "80", content = content)}<br>
+    Title:   ${h.tags.text(name = 'title', value = m.get('title', ''))}<br>
+    Author:  ${h.tags.text(name = 'author', value = m.get('author', ''))}<br>
+    Content: ${h.tags.textarea(name = 'content', rows = "50", cols = "80",
+        content = m.get('content', ''))}<br>
 </%def>
-
-
 

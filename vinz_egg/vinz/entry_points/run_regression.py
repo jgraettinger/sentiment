@@ -11,7 +11,6 @@ from vinz.cluster import Clusterer
 from vinz.feature_transform import FeatureTransform
 from vinz.clustering_coordinator import ClusteringCoordinator
 
-N_ITERATIONS = 100
 
 def iterate_and_report(coord, sample_classes, class_sample_size):
 
@@ -72,36 +71,34 @@ def anneal():
     coord.anneal_cluster(min_act_clus)
     return
 
-def main(opts):
+def run_regression(
+    iteration_count,
+    regression_database,
+    config_overrides,
+    clusterer,
+    feature_transform,
+    class_names,
+    ):
 
     # Set up injector
     inj = vinz.module.Module().configure(getty.Injector())
 
     # Override specified configuration parameters
-    for conf in opts.config_overrides:
-        assert '=' in conf, "Configurations must be of form 'name = value'"
-
-        name, value = [i.strip() for i in conf.split('=')]
-        if value.isdigit():
-            value = int(value)
-        elif value.replace('.', '').isdigit():
-            value = float(value)
-
-        inj.bind_instance(getty.Config, with_annotation = name, to = value)
+    for conf_name, conf_value in config_overrides.items():
+        inj.bind_instance(getty.Config, with_annotation = conf_name, to = conf_value)
 
     # Connect to regression database
-    db = sqlite3.connect(opts.regression_database, isolation_level = None)
+    db = sqlite3.connect(regression_database, isolation_level = None)
 
     # Obtain a clusterer instance
     clusterer = inj.get_instance(
-        vinz.cluster.Clusterer, annotation = opts.clusterer_type)
+        vinz.cluster.Clusterer, annotation = clusterer)
 
     # If given, obtain feature-transform instance
-    feature_transform = None
-    if opts.feature_transform:
+    if feature_transform:
         feature_transform = inj.get_instance(
             vinz.feature_transform.FeatureTransform,
-            annotation = opts.feature_transform)
+            annotation = feature_transform)
 
     coord = ClusteringCoordinator(clusterer, feature_transform, inj)
 
@@ -111,7 +108,8 @@ def main(opts):
     class_sample_size = {}
 
     # Load classes & samples
-    for class_id in opts.classes:
+    for class_id in class_names:
+        class_id = str(class_id)
 
         class_sample_size[class_id] = 0
         coord.add_cluster(class_id)
@@ -139,33 +137,40 @@ def main(opts):
         assert class_sample_size[class_id], "No samples w/ class %s" % class_id
 
     # Run regression iterations
-    for i in xrange(N_ITERATIONS):
+    for i in xrange(iteration_count):
         stats = iterate_and_report(coord, sample_classes, class_sample_size)
         print simplejson.dumps(stats)
 
     return
 
+def main():
 
-opt_parser = optparse.OptionParser()
+    opt_parser = optparse.OptionParser()
 
-opt_parser.add_option('-d', '--database', action = 'store',
-    type = 'string', dest = 'regression_database')
-opt_parser.add_option('-c', '--clusterer', action = 'store',
-    type = 'string', dest = 'clusterer_type',
-    default = 'SparseGaussEmClusterer')
-opt_parser.add_option('-f', '--feature-transform', action = 'store',
-    type = 'string', dest = 'feature_transform')
-opt_parser.add_option('-n', '--class-name', action = 'append',
-    type = 'string', dest = 'classes', default = [])
-opt_parser.add_option('-o', '--config-override', action = 'append',
-    type = 'string', dest = 'config_overrides', default = [])
+    opt_parser.add_option('-i', '--iteration-count', action = 'store',
+        type = 'int', dest = 'iteration_count', default = 150)
+    opt_parser.add_option('-d', '--database', action = 'store',
+        type = 'string', dest = 'regression_database')
+    opt_parser.add_option('-c', '--clusterer', action = 'store',
+        type = 'string', dest = 'clusterer',
+        default = 'SparseGaussEmClusterer')
+    opt_parser.add_option('-f', '--feature-transform', action = 'store',
+        type = 'string', dest = 'feature_transform')
+    opt_parser.add_option('-n', '--class-name', action = 'append',
+        type = 'string', dest = 'class_names', default = [])
+    opt_parser.add_option('-o', '--config-override', action = 'store',
+        type = 'string', dest = 'config_overrides', default = '{}')
 
-opts, _ = opt_parser.parse_args()
+    opts, _ = opt_parser.parse_args()
+ 
+    if not opts.regression_database:
+        opt_parser.error("Regression database must be provided")
+    if not opts.class_names or len(opts.class_names) < 2:
+        opt_parser.error("At least two class-names are required")
 
-if not opts.regression_database:
-    opt_parser.error("Regression database must be provided")
-if not opts.classes or len(opts.classes) < 2:
-    opt_parser.error("At least two class-names are required")
+    opts.config_overrides = simplejson.loads(opts.config_overrides)
+    assert isinstance(opts.config_overrides, dict), \
+        "Config overrides must be JSON map"
 
-main(opts)
+    run_regression(**opts.__dict__)
 

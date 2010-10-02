@@ -18,7 +18,7 @@ setuptools.setup(
         'Mako',
         'SqlAlchemy',
         'FormEncode',
-        'GEvent',
+        'Eventlet',
         'Greenlet',
         'WebHelpers',
     ],

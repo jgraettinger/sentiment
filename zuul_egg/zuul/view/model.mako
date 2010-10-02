@@ -3,20 +3,38 @@
     import webhelpers.html as h
 %>
 
+
+<%def name="view_form(req, uri, model)">
+    ${h.tags.form(uri)}
+        ${h.tags.hidden('_secure_token', req.secure_token)}
+        ${self.form_elements(req, model)}
+        ${h.tags.submit(value = 'Save', name = '_commit')}
+    ${h.tags.end_form()}
+</%def>
+
+<%def name="view_collection(req, models)">
+    ${self.as_table(req, models)|n}
+</%def>
+
+<%def name="view_instance(req, model)">
+    ${self.view_collection(req, [model])|n}
+</%def>
+
 <%def name="as_table(req, models)">
     <table>
 
     ## Column headers
     <tr>
+    <td></td>
     ${self.column_headers()}
     </tr>
 
     <% empty = True %>
     %for model in models:
         <tr>
+        <td>${self.delete_link(req, model)}</td>
         ${self.as_row(req, model)}
         <td>${self.edit_link(req, model)}</td>
-        <td>${self.delete_link(req, model)}</td>
         </tr>
         <% empty = False %>
     %endfor
@@ -26,14 +44,6 @@
     %endif
 
     </table>
-</%def>
-
-<%def name="as_form(req, uri, model)">
-    ${h.tags.form(uri)}
-        ${h.tags.hidden('_secure_token', req.secure_token)}
-        ${self.form_elements(req, model)}
-        ${h.tags.submit(value = 'Save', name = '_commit')}
-    ${h.tags.end_form()}
 </%def>
 
 <%def name="column_headers()"> 

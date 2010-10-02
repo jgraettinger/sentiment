@@ -7,6 +7,8 @@ import cluster_document
 import secure_token
 import static_resource_tree
 
+import regression
+
 import zuul.wsgi_route
 import getty
 
@@ -24,5 +26,7 @@ class DispatchMapping(object):
         cluster_document.bind_actions(dispatcher)
         secure_token.bind_actions(dispatcher)
         static_resource_tree.bind_actions(dispatcher)
+
+        regression.bind_actions(dispatcher)
         return
 

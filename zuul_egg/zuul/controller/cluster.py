@@ -1,18 +1,17 @@
 
-from zuul.controller import common, secure_token, orm_session
-from zuul.model import Cluster
-import zuul.wsgi_route
-
-from mako.lookup import TemplateLookup
+import getty
+import sqlalchemy.orm
+import sqlalchemy as sa
 
 from webob import Response
 from webob.dec import wsgify
 from webob.exc import HTTPNotFound
 
-import sqlalchemy.orm
-import sqlalchemy as sa
+from mako.lookup import TemplateLookup
 
-import getty
+import zuul.wsgi_route
+from zuul.model import Cluster
+from zuul.controller import common, secure_token, orm_session
 
 class ClusterAction(object):
 

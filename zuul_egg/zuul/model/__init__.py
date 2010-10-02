@@ -5,3 +5,4 @@ from document import Document
 from clustering_document import ClusteringDocument
 from cluster_document import ClusterDocument
 
+from regression import Regression

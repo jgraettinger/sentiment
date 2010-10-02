@@ -1,11 +1,12 @@
 
-import paste.evalexception
-import zuul.wsgi_route
-import getty
-import zuul
-
-import sys
 import os
+import sys
+import getty
+
+import paste.evalexception
+
+import zuul
+import zuul.wsgi_route
 
 inj = getty.Injector()
 inj.bind_instance(getty.Config,
@@ -44,6 +45,6 @@ application = inj.get_instance(zuul.wsgi_route.Dispatcher)
 application = paste.evalexception.EvalException(application)
 
 # start the server
-import gevent.wsgi
-gevent.wsgi.WSGIServer(('localhost', 8080), application).serve_forever()
+import eventlet.wsgi
+eventlet.wsgi.server(eventlet.listen(('localhost', 8080)), application)
 

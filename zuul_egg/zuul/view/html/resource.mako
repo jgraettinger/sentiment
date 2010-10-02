@@ -28,7 +28,7 @@
     <html>
         ${display_ui_flash(req)}
 
-        ${model_ns.as_table(req, models)}
+        ${model_ns.view_collection(req, models)}
 
         ${h.tags.link_to('New...', req.make_url(action = 'new'))|n}
     </html>
@@ -41,7 +41,7 @@
     %>
     <html>
         ${display_ui_flash(req)}
-        ${model_ns.as_form(req, uri, None)}
+        ${model_ns.view_form(req, uri, None)}
     <html>
 </%def>
 
@@ -52,7 +52,7 @@
     %>
     <html>
         ${display_ui_flash(req)}
-        ${model_ns.as_form(req, uri, model)}
+        ${model_ns.view_form(req, uri, model)}
     <html>
 </%def>
 
@@ -61,14 +61,14 @@
     <html>
         ${display_ui_flash(req)}
         <h3>${model_ns.instance_description(model)}</h3>
-        ${model_ns.as_table(req, [model])}
+        ${model_ns.view_instance(req, model)}
 
         %for child_ns, children in child_groups:
             <% child_ns = local.get_namespace(child_ns) %>
 
             <br><br>
             <h3>${child_ns.model_description()}</h3>
-            ${child_ns.as_table(req, children)}
+            ${child_ns.view_collection(req, children)}
 
         %endfor
         
@@ -126,5 +126,21 @@
 
 <%def name="delete_fail(req, model_ns, exception)">
     <h3>Error: ${str(exception)|h}</h3><br>
+</%def>
+
+###### REMOVE ME!
+
+<%def name="run_okay(req, model_ns, model, thread)">
+    <% model_ns = local.get_namespace(model_ns) %>
+    <%
+        req.resp.status = 303
+        req.resp.location = model_ns.show_uri(req, model)
+        self.set_ui_flash(req.resp, 'Started Regression Run')
+    %>
+</%def>
+
+<%def name="run_fail(req, model_ns, exception)">
+    <h3>Error: ${str(exception)|h}</h3><br>
+    ${self.index(req, model_ns, req.query)}
 </%def>
 
