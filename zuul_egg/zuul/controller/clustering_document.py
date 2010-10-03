@@ -1,18 +1,18 @@
 
-from zuul.controller import common, secure_token, orm_session
-from zuul.model import ClusteringDocument
-import zuul.wsgi_route
-
-from mako.lookup import TemplateLookup
+import getty
+import sqlalchemy.orm
+import sqlalchemy as sa
 
 from webob import Response
 from webob.dec import wsgify
 from webob.exc import HTTPNotFound
 
-import sqlalchemy.orm
-import sqlalchemy as sa
+from mako.lookup import TemplateLookup
 
-import getty
+import zuul.wsgi_route
+from zuul.model import ClusteringDocument
+from zuul.controller import common, secure_token, orm_session
+from zuul.view.template_resolver import TemplateResolver
 
 
 class ClusteringDocumentAction(object):
@@ -22,15 +22,18 @@ class ClusteringDocumentAction(object):
         templates = TemplateLookup)
     def __init__(self, app, templates):
         self.app = app
-        self.template_lookup = templates
+        self.template_resolver = TemplateResolver(
+            templates, ['clustering_document', 'resource'])
 
-    def render(self, req, view_def, **kwargs):
-        template = self.template_lookup.get_template(
-            '/%s/resource.mako' % req.route_args['format'])
+    def render(self, req, template, **kwargs):
+        template = self.template_resolver.resolve(req, template)
 
         req.resp = Response()
-        req.resp.body = template.get_def(view_def).render(
-            req = req, model_ns = '/model/clustering_document.mako', **kwargs)
+        req.resp.body = template.render(
+            req = req,
+            model_ns = '/model/clustering_document.mako',
+            template_resolver = self.template_resolver,
+            **kwargs)
         return req.resp
 
 ###############################################################################
@@ -58,17 +61,17 @@ class query(ClusteringDocumentAction):
 class index(ClusteringDocumentAction):
     @wsgify
     def __call__(self, req):
-        return self.render(req, 'index', models = req.query)
+        return self.render(req, 'index.mako', models = req.query)
 
 class new(ClusteringDocumentAction):
     @wsgify
     def __call__(self, req):
-        return self.render(req, 'new')
+        return self.render(req, 'new.mako')
 
 class edit(ClusteringDocumentAction):
     @wsgify
     def __call__(self, req):
-        return self.render(req, 'edit', model = req.query.one())
+        return self.render(req, 'edit.mako', model = req.query.one())
 
 ###############################################################################
 ###    Mutating Actions
@@ -82,10 +85,10 @@ class create(ClusteringDocumentAction):
             inst = ClusteringDocument(**fields)
             req.session.add(inst)
             req.session.commit()
-            return self.render(req, 'create_okay', model = inst)
+            return self.render(req, 'create_okay.mako', model = inst)
 
         except Exception, e:
-            return self.render(req, 'create_fail', exception = e)
+            return self.render(req, 'create_fail.mako', exception = e)
 
 class update(ClusteringDocumentAction):
     @wsgify
@@ -95,10 +98,10 @@ class update(ClusteringDocumentAction):
             fields = ClusteringDocument.validate_update(req.POST)
             row_count = req.query.update(fields, synchronize_session = False)
             req.session.commit()
-            return self.render(req, 'update_okay', row_count = row_count)
+            return self.render(req, 'update_okay.mako', row_count = row_count)
 
         except Exception, e:
-            return self.render(req, 'update_fail', exception = e)
+            return self.render(req, 'update_fail.mako', exception = e)
 
 
 class delete(ClusteringDocumentAction):
@@ -108,10 +111,10 @@ class delete(ClusteringDocumentAction):
         try:
             row_count = req.query.delete(synchronize_session = False)
             req.session.commit()
-            return self.render(req, 'delete_okay', row_count = row_count)
+            return self.render(req, 'delete_okay.mako', row_count = row_count)
 
         except Exception, e:
-            return self.render(req, 'delete_fail', exception = e)
+            return self.render(req, 'delete_fail.mako', exception = e)
 
 ###############################################################################
 ###    Action <=> URL Bindings

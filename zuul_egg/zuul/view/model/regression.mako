@@ -1,10 +1,9 @@
+<%inherit file="/model.mako"/>
 <%!
     import webhelpers.html.tags
     import webhelpers.html as h
     import simplejson
 %>
-
-<%inherit file="/model.mako"/>
 
 <%def name="controller()">
     <% return 'regression' %>
@@ -28,49 +27,6 @@
     <td>Config Overrides</td>
     <td></td>
     <td>Results</td>
-</%def>
-
-<%def name="as_table(req, models)">
-    
-    <script language="javascript" type="text/javascript" src="/static/jquery-1.4.2.min.js"></script>
-    <script language="javascript" type="text/javascript" src="/static/flot-0.6/jquery.flot.js"></script>
-    <script id="source" language="javascript" type="text/javascript">
-
-        function onDataReceived(data, divid, uri) {
-            // extract the first coordinate pair so you can see that
-            // data is now an ordinary Javascript object
-
-            var flot_data = []
-            for(var label in data.fmeasure)
-            {
-                flot_data.push({data: data.fmeasure[label]})
-            }
-
-            // and plot all we got
-            $.plot($(divid), flot_data);
-        }
-
-    </script>
-
-    ${parent.as_table(req, models)}
-
-    <script id="source" language="javascript" type="text/javascript">
-    $(document).ready( function() {
-
-        %for model in models:
-            <% url = '"/regression/%s/results?fmeasure"' % model.id %>
-
-            $.ajax({
-                url: ${url},
-                method: 'GET',
-                dataType: 'json',
-                success: function(data) {onDataReceived(data, "#reg_plot_${model.id}", ${url});}
-            });
-
-        %endfor
-
-    });
-    </script>
 </%def>
 
 <%def name="as_row(req, model)">
