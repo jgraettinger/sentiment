@@ -18,7 +18,7 @@ public:
     typedef unsigned key_type;
     typedef double value_type;
 
-    // ptr to sparse_features is immutable by default
+    // ptr to const sparse_features by default
     typedef bind_ptr<const sparse_features>::ptr_t ptr_t;
     typedef bind_ptr<sparse_features>::ptr_t mutable_ptr_t;
 

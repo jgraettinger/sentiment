@@ -17,28 +17,32 @@ def iterate_and_report(coord, sample_classes, class_sample_size):
     entropy = coord.expect_and_maximize()
 
     # stats over samples to track
-    prob, prec, recall = {}, {}, {}
+    tot_clus_prob, prec, recall = {}, {}, {}
     for k in class_sample_size:
-        prob[k] = prec[k] = recall[k] = 0
+        tot_clus_prob[k] = prec[k] = recall[k] = 0
 
-    for uid, likelihood, class_probs in coord.sample_state():
+    for sample in coord.samples:
 
-        for class_id in sample_classes[uid]:
+        clus_prob = sample.cluster_probabilities
+
+        for clus_id in sample_classes[sample.uid]:
             # aggregate precision & recall
-            prec[class_id] += class_probs[class_id][0]
-            recall[class_id] += class_probs[class_id][0]
+            prec[clus_id] += clus_prob[clus_id][0]
+            recall[clus_id] += clus_prob[clus_id][0]
 
         # aggregate total class probability
-        for class_id, (class_prob, is_hard) in class_probs.items():
-            prob[class_id] += class_prob
+        for clus_id, (prob, is_hard) in clus_prob.items():
+            tot_clus_prob[clus_id] += prob
 
-    for class_id, n_samples in class_sample_size.items():
+    for clus_id, n_samples in class_sample_size.items():
         # normalize precision by total class prob
-        prec[class_id] /= prob[class_id]
+        prec[clus_id] /= tot_clus_prob[clus_id]
         # normalize recall by # of class samples
-        recall[class_id] /= n_samples 
+        recall[clus_id] /= n_samples 
 
-    return entropy, prec, recall, prob
+    priors = coord.clusterer.cluster_set.priors
+
+    return entropy, prec, recall, priors
 
 def anneal():
 
@@ -85,7 +89,8 @@ def run_regression(
 
     # Override specified configuration parameters
     for conf_name, conf_value in config_overrides.items():
-        inj.bind_instance(getty.Config, with_annotation = conf_name, to = conf_value)
+        inj.bind_instance(getty.Config,
+            with_annotation = conf_name, to = conf_value)
 
     # Connect to regression database
     db = sqlite3.connect(regression_database, isolation_level = None)
@@ -108,15 +113,16 @@ def run_regression(
     class_sample_size = {}
 
     # Load classes & samples
-    for class_id in class_names:
-        class_id = str(class_id)
+    for clus_id in class_names:
+        clus_id = str(clus_id)
 
-        class_sample_size[class_id] = 0
-        coord.add_cluster(class_id)
+        class_sample_size[clus_id] = 0
+        coord.add_cluster(clus_id)
 
         for uid, type, weight, attributes in db.execute("""
-            select uid, type, weight, attributes from sample join sample_class on
-                uid = sample_uid and class_name = ?""", (class_id,)):
+            select uid, type, weight, attributes from
+                sample join sample_class on
+                uid = sample_uid and class_name = ?""", (clus_id,)):
 
             uid = str(uid)
             if uid not in sample_classes:
@@ -124,22 +130,26 @@ def run_regression(
                 attributes = simplejson.loads(attributes)
 
                 # TODO: More principled initialization
-                if class_sample_size[class_id] < 2:
-                    s_prob = {class_id: (1.0, True)}
+                if class_sample_size[clus_id] < 2:
+                    s_prob = {clus_id: (1.0, True)}
                 else:
                     s_prob = {}
 
-                coord.add_sample(uid, type, weight, s_prob, **attributes)
+                sample = coord.add_sample(uid, type,  **attributes)
+                sample.weight = weight
+                sample.cluster_probabilities = s_prob
 
-            sample_classes[uid].append(class_id)
-            class_sample_size[class_id] += 1.0
+            sample_classes[uid].append(clus_id)
+            class_sample_size[clus_id] += 1.0
 
-        assert class_sample_size[class_id], "No samples w/ class %s" % class_id
+        assert class_sample_size[clus_id], \
+            "No samples w/ class %s" % clus_id
 
     # Run regression iterations
     for i in xrange(iteration_count):
         stats = iterate_and_report(coord, sample_classes, class_sample_size)
         print simplejson.dumps(stats)
+        sys.stdout.flush()
 
     return
 

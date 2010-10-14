@@ -16,9 +16,8 @@ from vinz.clustering_coordinator import ClusteringCoordinator
 inj = vinz.module.Module().configure(getty.Injector())
 
 clusterer = inj.get_instance(
-    vinz.cluster.Clusterer, annotation = 'dense_passthrough')
-feature_transform = inj.get_instance(
-    vinz.feature_transform.FeatureTransform, annotation = 'dense_passthrough')
+    vinz.cluster.Clusterer, annotation = 'DenseGaussEmClusterer')
+feature_transform = None
 coord = ClusteringCoordinator(clusterer, feature_transform, inj)
 
 
@@ -29,16 +28,14 @@ for c_ind, dataset in enumerate(sys.argv[1:]):
 
     for l_ind, line in enumerate(open(dataset)):
 
-        if l_ind < 2:
-            mem = {class_id: (1, True)}
-        else:
-            mem = {}
-
         d_uid = 'class_%d_%d' % (c_ind, l_ind)
-
         x, y = [float(i) for i in line.split()]
 
-        coord.add_sample(d_uid, 'dense_passthrough', 1, mem, features = [x, y])
+        sample = coord.add_sample(d_uid,
+            'dense_passthrough', features = [x, y])
+
+        if l_ind < 2:
+            sample.cluster_probabilities = {class_id: (1, True)}
 
 color = {
     'class_0': (1.0, 0.0, 0.0, 0.3),
@@ -80,17 +77,17 @@ def draw_samples():
 
     glBegin(GL_POINTS)
 
-    for s_uid, p, probs in coord.sample_state():
+    for sample in coord.samples:
 
-        is_fixed = any(i[1] for i in probs.values())
+        is_fixed = any(i[1] for i in sample.cluster_probabilities.values())
 
         if is_fixed:
             cur_color = [0, 0, 0, 1]
         else:
             # color-strength inverse to likelihood
-            cur_color = [0, 0, 0, 0.5 * math.exp(-100 * p)]
+            cur_color = [0, 0, 0, 0.5 * math.exp(-100 * sample.probability)]
 
-        for c_uid, (weight, hard) in probs.items():
+        for c_uid, (weight, hard) in sample.cluster_probabilities.items():
             t = color[c_uid]
             cur_color[0] += t[0] * weight
             cur_color[1] += t[1] * weight
@@ -98,7 +95,7 @@ def draw_samples():
 
         glColor(*cur_color)
 
-        x, y = coord.clusterer.get_estimator_features(s_uid).as_list()
+        x, y = sample.estimator_features.as_list()
         glVertex3f(x, y, 0)
 
     glEnd()
@@ -125,8 +122,12 @@ def keyboard(*args):
         min_li, min_uid, min_cur_clus, min_act_clus = \
             None, None, None, None
 
-        for cur_uid, cur_li, probs in coord.sample_state():
+        for sample in coord.samples:
 
+            cur_uid = sample.uid
+            cur_li = sample.probability
+            probs = sample.cluster_probabilities
+                
             # it's already fixed
             if any(i[1] for i in probs.values()):
                 continue
@@ -146,8 +147,8 @@ def keyboard(*args):
 
         print min_uid, min_li
 
-        coord.clusterer.set_sample_probabilities(
-            min_uid, {min_act_clus: (1, True)})
+        coord.clusterer.get_sample(min_uid
+            ).cluster_probabilities = {min_act_clus: (1, True)}
 
         if min_act_clus != min_cur_clus:
             coord.anneal_cluster(min_cur_clus)

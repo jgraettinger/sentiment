@@ -2,6 +2,9 @@
 #ifndef CLUSTER_EM_CLUSTERER_HPP
 #define CLUSTER_EM_CLUSTERER_HPP
 
+#include "cluster_set.hpp"
+#include "cluster_sample.hpp"
+#include <boost/python.hpp>
 #include <string>
 #include <vector>
 #include <map>
@@ -17,14 +20,15 @@ public:
     typedef Estimator     estimator_t;
     typedef InputFeatures input_features_t;
     typedef typename estimator_t::features_t estimator_features_t;
+    typedef cluster_sample<
+        input_features_t, estimator_features_t> cluster_sample_t;
 
     typedef std::map<
         std::string,
         std::pair<double, bool>
     > sample_cluster_state_t;
 
-    em_clusterer()
-    { }
+    em_clusterer();
 
     void add_cluster(
         const std::string & cluster_uid,
@@ -33,24 +37,17 @@ public:
     void drop_cluster(
         const std::string & cluster_uid);
 
-    void add_sample(
+    cluster_set::ptr_t get_cluster_set()
+    { return _cluster_set; }
+
+    typename cluster_sample_t::ptr_t add_sample(
         const std::string & uid,
-        const double & weight,
-        const typename input_features_t::ptr_t & feat,
-        // {'cluster-uid': (P(c|s), is-hard)}
-        const sample_cluster_state_t & cluster_probs
+        const typename input_features_t::ptr_t & input_features
     );
 
-    void set_sample_probabilities(
-        const std::string & uid, const sample_cluster_state_t & cluster_probs);
+    typename cluster_sample_t::ptr_t get_sample(const std::string & uid);
 
-    sample_cluster_state_t get_sample_probabilities(
-        const std::string & sample_uid);
-
-    double get_sample_likelihood(const std::string & uid);
-
-    typename estimator_features_t::ptr_t get_estimator_features(
-        const std::string & sample_uid);
+    boost::python::list py_samples();
 
     void drop_sample(const std::string & uid);
 
@@ -61,34 +58,10 @@ public:
 
 private:
 
-    struct sample_t {
-
-        // P(sample | class)
-        std::vector<double> prob_sample_class;
-
-        // P(class | sample)
-        std::vector<double> prob_class_sample;
-
-        // whether P(cluster|sample) is fixed in place, or
-        //  may be adjusted during the expectation step
-        std::vector<bool> is_hard;
-
-        // relative weight of sample, as compared to peers
-        double weight;
-
-        typename input_features_t::ptr_t   input_features;
-        typename estimator_features_t::ptr_t est_features;
-
-        // unnormalized sum{ P(sample | class) for class in C}
-        double prob_sample;
-
-        void norm_class_probs();
-    };
-
-    typedef std::map<std::string, sample_t> samples_t;
+    typedef std::map<std::string, typename cluster_sample_t::ptr_t> samples_t;
     samples_t _samples;
 
-    std::vector<std::string> _clusters;
+    cluster_set::ptr_t _cluster_set;
     std::vector<typename Estimator::ptr_t> _estimators;
 };
 

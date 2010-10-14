@@ -9,23 +9,42 @@ ${parent.body(req, model_ns, models)}
 <%def name="head_javascript()">
     <script id="source" language="javascript" type="text/javascript">
 
-        function onDataReceived(data, divid, uri) {
-            // extract the first coordinate pair so you can see that
-            // data is now an ordinary Javascript object
+        function onDataReceived(data, div_id, uri) {
 
             var flot_data = []
-            for(var label in data.fmeasure)
+            for(var label in data.precision)
             {
-                flot_data.push({data: data.fmeasure[label]})
+                prec = data.precision[label]
+                recall = data.recall[label]
+                fmeasure = []
+
+                for(var i = 0; i != prec.length; ++i)
+                {
+                    fmeasure.push([i, 2 * prec[i] * recall[i] / (prec[i] + recall[i])]);
+                }
+                flot_data.push({data: fmeasure})
             }
 
             // and plot all we got
-            $.plot($(divid), flot_data);
+            $.plot($(div_id), flot_data);
+
+            if(!data.is_running)
+                return;
+
+            // schedule an update of the plot
+            setTimeout( function() {
+                    $.ajax({
+                        url: uri,
+                        method: 'GET',
+                        dataType: 'json',
+                        success: function(data) {onDataReceived(data, div_id, uri);}
+                    });
+                }, 1000);
         }
 
         $(document).ready( function() {
         %for model in models:
-            <% url = '"/regression/%s/results?fmeasure"' % model.id %>
+            <% url = '"/regression/%s/results?precision&recall"' % model.id %>
 
             $.ajax({
                 url: ${url},

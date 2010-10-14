@@ -32,16 +32,7 @@ BOOST_PYTHON_MODULE(_common_conversions)
     map_from_python< boost::unordered_map<unsigned, double>
         >::register_conversion();
 
-    // em_cluster::sample_cluster_state_t
-    map_to_python< std::map<std::string, std::pair<double, bool> >
-        >::register_conversion();
-    map_from_python< std::map<std::string, std::pair<double, bool> >
-        >::register_conversion();
-
-    pair_to_python< std::pair<double, bool> >::register_conversion();
-    pair_from_python< std::pair<double, bool> >::register_conversion();
-
-    // feature_selection::selector_mixin
+    // feature_transform::information_gain_statistic::derive_statistics
     vector_to_python< std::vector< std::pair<unsigned, double> >
         >::register_conversion();
     vector_from_python< std::vector< std::pair<unsigned, double> >

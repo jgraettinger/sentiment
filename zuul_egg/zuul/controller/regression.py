@@ -92,17 +92,19 @@ class results(RegressionAction):
 
         inst = req.query.one()
 
-        results = {'series_length': inst.iteration_count}
+        results = {
+            'series_length': inst.iteration_count,
+            'is_running': inst.is_running,
+        }
+
         if 'precision' in req.GET:
             results['precision'] = inst.precision
         if 'recall' in req.GET:
             results['recall'] = inst.recall
-        if 'fmeasure' in req.GET:
-            results['fmeasure'] = {}
-            
-            for label in inst.precision:
-                results['fmeasure'][label] = [(p[0], p[1] * r[1]) for \
-                    p, r in zip(inst.precision[label], inst.recall[label])]
+        if 'prior_prob' in req.GET:
+            results['prior_prob'] = inst.prior_prob
+        if 'entropy' in req.GET:
+            results['entropy'] = inst.entropy
 
         resp = Response()
         resp.content_type = 'application/json'
@@ -158,7 +160,7 @@ class run(RegressionAction):
 
         inst = req.query.one()
         try:
-            assert not inst.is_running(), 'Regression is already running'
+            assert not inst.is_running, 'Regression is already running'
 
             thread = eventlet.spawn(inst.run)
             return self.render(req, 'run_okay.mako', model = inst, thread = thread)

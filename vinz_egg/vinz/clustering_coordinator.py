@@ -28,17 +28,12 @@ class ClusteringCoordinator(object):
 
         # {cluster-id: cluster-estimator}
         self.estimators = {}
-
-        # set([sample-id])
-        self.samples = set()
         return
 
     def add_sample(
         self,
         sample_id,
         sample_type,
-        sample_mass,
-        cluster_state,
         **sample):
 
         # use getty to identify the injected normalizer &
@@ -53,17 +48,14 @@ class ClusteringCoordinator(object):
         sample_features = featurizer.featurize(normalized_sample)
 
         # hand-off to clusterer
-        self.clusterer.add_sample(
-            sample_id, sample_mass, sample_features, cluster_state)
-        self.samples.add(sample_id)
+        sample = self.clusterer.add_sample(
+            sample_id, sample_features)
 
         self._samples_changed = True
-        return
+        return sample
 
     def drop_sample(self, sample_id):
         self.clusterer.drop_sample(sample_id)
-        self.samples.discard(sample_id)
-        
         self._samples_changed = True
         return
 
@@ -104,12 +96,7 @@ class ClusteringCoordinator(object):
                 estimator.soft_prob_coeff + self._soft_prob_coeff_step)
         return entropy
 
-    def sample_state(self):
-
-        for sample_id in self.samples:
-            yield (
-                sample_id,
-                self.clusterer.get_sample_likelihood(sample_id),
-                self.clusterer.get_sample_probabilities(sample_id))
-        return
+    @property
+    def samples(self):
+        return self.clusterer.samples
 

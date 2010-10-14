@@ -87,7 +87,7 @@
 
 <%def name="run_link(req, model)">
     <% uri = self.run_uri(req, model) %>
-    %if model.is_running():
+    %if model.is_running:
         Running...
     %else:
         ${h.tags.form(uri, method = 'RUN')}

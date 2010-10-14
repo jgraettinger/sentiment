@@ -81,8 +81,9 @@ class Regression(BaseModel):
     def run(self):
         return self._live.run(self)
 
+    @property
     def is_running(self):
-        return self._live.is_running()
+        return self._live.is_running
 
     @property
     def precision(self):
@@ -91,6 +92,14 @@ class Regression(BaseModel):
     @property
     def recall(self):
         return self._live.recall
+
+    @property
+    def entropy(self):
+        return self._live.entropy
+
+    @property
+    def prior_prob(self):
+        return self._live.prior_prob
 
     @classmethod
     def define_orm_mapping(kls, orm):
@@ -122,16 +131,19 @@ class _LiveRegression(object):
         self._proc = None
         return
 
+    @property
     def is_running(self):
         return self._proc is not None
 
     def run(self, reg_model):
 
-        if self.is_running():
+        if self.is_running:
             raise RuntimeError("Regression is already running!")
 
+        self.entropy = []
         self.precision = {}
         self.recall = {}
+        self.prior_prob = {}
 
         self._proc = subprocess.Popen(['python'],
             stdin  = subprocess.PIPE,
@@ -160,12 +172,15 @@ class _LiveRegression(object):
         self._proc.stdin.close()
 
         for iter_no, line in enumerate(self._proc.stdout):
-            entropy, precision, recall, class_prob = simplejson.loads(line)
+            entropy, precision, recall, prior_prob = simplejson.loads(line)
 
+            self.entropy.append(entropy)
             for k, v in precision.items():
-                self.precision.setdefault(k, []).append((iter_no, v))
+                self.precision.setdefault(k, []).append(v)
             for k, v in recall.items():
-                self.recall.setdefault(k, []).append((iter_no, v))
+                self.recall.setdefault(k, []).append(v)
+            for k, v in prior_prob.items():
+                self.prior_prob.setdefault(k, []).append(v)
 
         err = self._proc.stderr.read()
         code = self._proc.wait()
