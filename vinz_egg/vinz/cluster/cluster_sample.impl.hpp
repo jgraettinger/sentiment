@@ -99,7 +99,7 @@ void cluster_sample<InputFeatures, EstimatorFeatures
         // this will throw if item is of wrong type
         tmp_prob_cluster_sample[c_ind] = boost::python::extract<
             double>(item[1][0]);
-        is_hard[c_ind] = boost::python::extract<
+        tmp_is_hard[c_ind] = boost::python::extract<
             bool>(item[1][1]);
     }
     // atomically update sample on success
