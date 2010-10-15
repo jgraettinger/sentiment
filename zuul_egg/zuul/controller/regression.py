@@ -95,14 +95,16 @@ class results(RegressionAction):
         results = {
             'series_length': inst.iteration_count,
             'is_running': inst.is_running,
+            'class_names': inst.class_names_list,
+            'stats': {}
         }
 
         if 'precision' in req.GET:
-            results['precision'] = inst.precision
+            results['stats']['precision'] = inst.precision
         if 'recall' in req.GET:
-            results['recall'] = inst.recall
+            results['stats']['recall'] = inst.recall
         if 'prior_prob' in req.GET:
-            results['prior_prob'] = inst.prior_prob
+            results['stats']['prior_prob'] = inst.prior_prob
         if 'entropy' in req.GET:
             results['entropy'] = inst.entropy
 

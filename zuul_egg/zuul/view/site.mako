@@ -15,7 +15,9 @@ ${self.head_javascript()}
     ${ui_flash.apply_pending_flashes(req)}
 %endif
 ${ui_flash.display_flashes(req)}
+<div class="body_container">
 ${self.body(req = req, **kwargs)}
+</div>
 </body>
 </html>
 
