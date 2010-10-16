@@ -32,7 +32,7 @@ for c_ind, dataset in enumerate(sys.argv[1:]):
         x, y = [float(i) for i in line.split()]
 
         sample = coord.add_sample(d_uid,
-            'dense_passthrough', features = [x, y])
+            'flat', features = [x, y])
 
         if l_ind < 2:
             sample.cluster_probabilities = {class_id: (1, True)}

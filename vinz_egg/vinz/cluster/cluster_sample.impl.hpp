@@ -97,10 +97,12 @@ void cluster_sample<InputFeatures, EstimatorFeatures
             boost::python::extract<std::string>(item[0]));
 
         // this will throw if item is of wrong type
-        tmp_prob_cluster_sample[c_ind] = boost::python::extract<
-            double>(item[1][0]);
-        tmp_is_hard[c_ind] = boost::python::extract<
-            bool>(item[1][1]);
+        double p = boost::python::extract<double>(item[1][0]);
+        if(p < 0.0 || p > 1.0)
+            throw std::range_error("Probability range error");
+
+        tmp_prob_cluster_sample[c_ind] = p;
+        tmp_is_hard[c_ind] = boost::python::extract<bool>(item[1][1]);
     }
     // atomically update sample on success
     prob_cluster_sample.swap(tmp_prob_cluster_sample);

@@ -34,13 +34,13 @@ class Module(object):
             to = vinz.featurization.basic_featurize.TfFeaturizer,
             with_annotation = 'reuters', scope = getty.Singleton)
 
-        # dense_passthrough sample type
+        # flat, passed-through sample type
         binder.bind(vinz.normalization.Normalizer,
             to = vinz.normalization.basic_normalize.NoOpNormalizer,
-            with_annotation = 'dense_passthrough', scope = getty.Singleton)
+            with_annotation = 'flat', scope = getty.Singleton)
         binder.bind(vinz.featurization.Featurizer,
             to = vinz.featurization.basic_featurize.PassthroughDenseFeaturizer,
-            with_annotation = 'dense_passthrough', scope = getty.Singleton)
+            with_annotation = 'flat', scope = getty.Singleton)
 
         # clusterer bindings
         binder.bind(vinz.cluster.Clusterer,

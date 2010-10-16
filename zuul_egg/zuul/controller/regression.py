@@ -53,6 +53,9 @@ class query(RegressionAction):
         elif 'id' in req.GET:
             q = q.filter(Regression.id.in_(req.GET.getall('id')))
 
+        if 'name' in req.GET:
+            q = q.filter(Regression.name.in_(req.GET.getall('name')))
+
         if 'class_name' in req.GET:
             class_names = ', '.join(sorted(req.GET.getall('class_name')))
             q = q.filter_by(class_names = class_names)

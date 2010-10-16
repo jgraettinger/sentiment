@@ -94,15 +94,26 @@ public:
 
         // normalize to obtain MLE covariance & std-deviation
         sq_std_dev *= 1.0 / _sample_mass;
+
+        // 'invent' some sample mass which shares the empirical mean,
+        //   but has a spherical co-variance with the empirically
+        //   observed std deviation. This improves the stability of
+        //   the solution in cases where the empirical observation
+        //   is not full-rank. The amount of contributed mass is
+        //   conditioned on the number of features, as the number
+        //   of empirical samples required for a stable solution
+        //   increases with the number of features.
+
+        double invented_sample_mass = std::log(_n_features) * 4;
+
+        _covar += invented_sample_mass * sq_std_dev * arma::eye(
+            _covar.n_rows, _covar.n_cols);
+
+        _sample_mass += invented_sample_mass;
+
+        // normalize to obtain combined observed &
+        //   'invented' covariance matrix
         _covar *= 1.0 / _sample_mass;
-
-        double coeff = std::exp(-1.0 * _sample_mass / (_n_features + 1.0)); 
-
-        // interpolate covariance matrix & a spherical co-variance,
-        //   weighted by the quantity of sample-mass relative to the
-        //   dimensionality of the distribution
-        _covar = (1.0 - coeff) * _covar + coeff * sq_std_dev * \
-            arma::eye(_covar.n_rows, _covar.n_cols);;
 
         // Perform SVD over co-variance matrix
         if( !arma::svd(_svd_U, _svd_s, _svd_V, _covar))

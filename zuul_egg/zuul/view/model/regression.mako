@@ -33,8 +33,9 @@
             %>
             <tr>
                 <td class="collection_column collection_column_left">
+                    <a href="${show_uri}">${model.name|h}</a><br>
                     ${model.clusterer|h}<br>
-                    ${model.feature_transform|h}<br>
+                    ${model.feature_transform or '<No Feature Transform>'|h}<br>
                     ${model.vinz_version|h}<br>
                 </td>
                 <td class="collection_column">
@@ -43,7 +44,16 @@
                 <td class="collection_column collection_column_right">
                     <div class="regression_collection_plot" id="reg_plot_${model.id}">
                     </div>
-                    <center>${self.run_link(req, model)}</center>
+                    <center>
+                    <% reg_results = model.regression_results() %>
+                    %if reg_results and all(i[2]>= i[1] for i in reg_results):
+                        <span style="color: green">Passes</span>
+                    %elif reg_results:
+                        <span style="color: red">Fails</span>
+                    %else:
+                        ${self.run_link(req, model)}
+                    %endif
+                    </center>
                 </td>
             </tr>
         %endfor
@@ -58,9 +68,11 @@
     %>
     <div class="regression_instance_plot" id="reg_plot_${model.id}">
     </div>
+    <div style="float: right">
+        ${self.view_regression_results_table(req, model)}
+    </div>
     <table class="collection">
-        <tr><td colspan="3">
-        <div class="collection_header">
+        <tr><td colspan="3"><div class="collection_header">
                 ${", ".join(model.class_names_list).title()|h}
         </div></td></tr>
         <tr>
@@ -79,6 +91,38 @@
     </table>
 </%def>
 
+<%def name="view_regression_results_table(req, model)">
+    <% results = model.regression_results() %>
+    <table class="results">
+        <tr><td colspan="3" class="results_header">
+            Regression Results
+        </td></tr>
+        %if not results:
+        <tr><td colspan="3" class="results_cell_red">
+                <i>Test hasn't yet run...</i>
+        </td></tr>
+        %endif
+        %for test_name, exp_value, act_value in results:
+        <tr>
+            <%
+                style = 'results_cell_green'
+                if act_value < exp_value:
+                    style = 'results_cell_red'
+            %>
+            <td class="${style}">
+                ${test_name|h}
+            </td>
+            <td class="${style}">
+                ${'%0.4f' % exp_value|h}
+            </td>
+            <td class="${style}">
+                ${'%0.4f' % act_value|h}
+            </td>
+        </tr>
+        %endfor
+    </table>
+</%def>
+
 <%def name="model_description()">
     Regression
 </%def>
@@ -92,6 +136,10 @@
     Regression DB:  ${h.tags.text(
         name = 'regression_database', size = "80",
         value = m.get('regression_database', ''))}<br>
+
+    Name: ${h.tags.text(
+        name = 'name', size = "80",
+        value = m.get('name', ''))}<br>
 
     Class Names: ${h.tags.text(
         name = 'class_names', size = "80",
@@ -113,6 +161,11 @@
         name = 'config_overrides',
         rows = "10", cols = "80",
         content = m.get('config_overrides', '{}'))}</br>
+
+    Expected Results: ${h.tags.textarea(
+        name = 'expected_results',
+        rows = "10", cols = "80",
+        content = m.get('expected_results', '{}'))}</br>
 
     Iteration Count: ${h.tags.text(
         name = 'iteration_count',

@@ -18,6 +18,7 @@ class Regression(BaseModel):
 
     class Schema(formencode.Schema):
         id = fva.Int(if_missing = None)
+        name = fva.String(strip = True, not_empty = True)
         regression_database = fva.String(not_empty = True)
         clusterer = fva.String(strip = True, not_empty = True)
         feature_transform = fva.String(strip = True)
@@ -25,6 +26,7 @@ class Regression(BaseModel):
         vinz_version = fva.String(strip = True, default = 'Vinz')
         class_names = fva.String(not_empty = True)
         config_overrides = fva.String(default = '{}')
+        expected_results = fva.String(default = '{}')
 
     @classmethod
     def validate_common(cls, args):
@@ -35,11 +37,17 @@ class Regression(BaseModel):
 
         if 'config_overrides' in args:
             try:
-                conf = simplejson.loads(args['config_overrides'])
-                assert isinstance(conf, dict), \
-                    "Config-overrides must be a dictionary"
+                assert isinstance(simplejson.loads(
+                    args['config_overrides']), dict)
             except:
-                raise AssertionError("Config-overrides must be json")
+                raise AssertionError("Config-overrides must be json dictionary")
+
+        if 'expected_results' in args:
+            try:
+                assert isinstance(simplejson.loads(
+                    args['expected_results']), dict)
+            except:
+                raise AssertionError("Expected-results must be json dictionary")
 
         return args
 
@@ -59,6 +67,14 @@ class Regression(BaseModel):
         self._orm_config_overrides = self._get_conf_overrides()
     config_overrides = property(_get_conf_overrides, _set_conf_overrides)
 
+    # property view on expected_results_dict, returning json
+    def _get_expected_results(self):
+        return simplejson.dumps(self.expected_results_dict)
+    def _set_expected_results(self, exp_results):
+        self.expected_results_dict = simplejson.loads(exp_results)
+        self._orm_expected_results = self._get_expected_results()
+    expected_results = property(_get_expected_results, _set_expected_results)
+
     def __init__(self, **kwargs):
         BaseModel.__init__(self, **kwargs)
         self._reconstruct()
@@ -70,6 +86,8 @@ class Regression(BaseModel):
             self.class_names = self._orm_class_names
         if getattr(self, '_orm_config_overrides'):
             self.config_overrides = self._orm_config_overrides
+        if getattr(self, '_orm_expected_results'):
+            self.expected_results = self._orm_expected_results
 
         if self.id in self._live_instances:
             self._live = self._live_instances[self.id]
@@ -80,6 +98,36 @@ class Regression(BaseModel):
 
     def run(self):
         return self._live.run(self)
+
+    def regression_results(self):
+
+        results = []
+        # is currently running, or hasn't yet run
+        if self.is_running or not self.precision:
+            return results
+
+        exp_prec = self.expected_results_dict.get('precision', {})
+        exp_recall = self.expected_results_dict.get('recall', {})
+
+        for class_name in self.class_names_list:
+            p = round(self.precision[class_name][-1], 4)
+            r = round(self.recall[class_name][-1], 4)
+
+            e_p = exp_prec.get(class_name, None)
+            e_r = exp_recall.get(class_name, None)
+            e_p = round(e_p, 4) if e_p else None
+            e_r = round(e_r, 4) if e_r else None
+
+            if e_p != None:
+                results.append(('%s-precision' % class_name, e_p, p))
+            if e_r != None:
+                results.append(('%s-recall' % class_name, e_r, r))
+            if e_p != None and e_r != None:
+                f = 2.0 * p * r / (p + r)
+                e_f = 2.0 * e_p * e_r / (e_p + e_r)
+                results.append(('%s-fscore' % class_name, e_f, f))
+
+        return results
 
     @property
     def is_running(self):
@@ -107,6 +155,8 @@ class Regression(BaseModel):
 
         tab = _.Table('regression', orm.meta,
             _.Column('id', _.Integer, primary_key = True),
+            _.Column('name', _.String,
+                index = True, unique = True, nullable = False),
             _.Column('regression_database', _.String, nullable = False),
             _.Column('clusterer', _.String, nullable = False),
             _.Column('feature_transform', _.String),
@@ -114,12 +164,15 @@ class Regression(BaseModel):
             _.Column('vinz_version', _.String, nullable = False),
             _.Column('class_names', _.String, nullable = False),
             _.Column('config_overrides', _.String),
+            _.Column('expected_results', _.String),
         )
         orm.cluster = sqlalchemy.orm.mapper(kls, tab, properties = {
             'class_names': sqlalchemy.orm.synonym(
                 '_orm_class_names', map_column = True),
             'config_overrides': sqlalchemy.orm.synonym(
-                '_orm_config_overrides', map_column = True)
+                '_orm_config_overrides', map_column = True),
+            'expected_results': sqlalchemy.orm.synonym(
+                '_orm_expected_results', map_column = True)
         })
 
 
