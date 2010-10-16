@@ -16,11 +16,13 @@
             by_class.setdefault(
                 tuple(m.class_names_list), []).append(m)
     %>
+    <table class="collection">
     %for classes, models in by_class.items():
 
+        <tr><td colspan="3">
         <div class="collection_header">
-            ${", ".join(classes).title()|h}
-        </div>
+                ${", ".join(classes).title()|h}
+        </div></td></tr>
 
         %for model in models:
             <%
@@ -29,30 +31,24 @@
 
                 show_uri = self.show_uri(req, model)
             %>
-            <div class="collection_item">
-                <div class="collection_colum">
-                    ${model.clusterer|h}
-                </div>
-                <div class="collection_colum">
-                    ${model.feature_transform|h}
-                </div>
-                <div class="collection_colum">
-                    ${model.vinz_version|h}
-                </div>
-                <div class="collection_colum">
-                    ${conf_overrides|h}
-                </div>
-                <div class="collection_colum">
-                    ${self.run_link(req, model)}
-                </div>
-                
-                <a href="${show_uri}">
-                <div class="regression_collection_plot" id="reg_plot_${model.id}">
-                </div>
-                </a>
-            </div>
+            <tr>
+                <td class="collection_column collection_column_left">
+                    ${model.clusterer|h}<br>
+                    ${model.feature_transform|h}<br>
+                    ${model.vinz_version|h}<br>
+                </td>
+                <td class="collection_column">
+                    ${conf_overrides|h}<br>
+                </td>
+                <td class="collection_column collection_column_right">
+                    <div class="regression_collection_plot" id="reg_plot_${model.id}">
+                    </div>
+                    <center>${self.run_link(req, model)}</center>
+                </td>
+            </tr>
         %endfor
     %endfor
+    </table>
 </%def>
 
 <%def name="view_instance(req, model)">
@@ -62,26 +58,25 @@
     %>
     <div class="regression_instance_plot" id="reg_plot_${model.id}">
     </div>
-    <div class="collection_header">
-        ${", ".join(model.class_names_list).title()|h}
-    </div>
-    <div class="collection_item">
-        <div class="collection_colum">
-            ${model.clusterer|h}
-        </div>
-        <div class="collection_colum">
-            ${model.feature_transform|h}
-        </div>
-        <div class="collection_colum">
-            ${model.vinz_version|h}
-        </div>
-        <div class="collection_colum">
-            ${conf_overrides|h}
-        </div>
-        <div class="collection_colum">
-            ${self.run_link(req, model)}
-        </div>
-    </div>
+    <table class="collection">
+        <tr><td colspan="3">
+        <div class="collection_header">
+                ${", ".join(model.class_names_list).title()|h}
+        </div></td></tr>
+        <tr>
+            <td class="collection_column collection_column_left">
+                ${model.clusterer|h}<br>
+                ${model.feature_transform|h}<br>
+                ${model.vinz_version|h}<br>
+            </td>
+            <td class="collection_column">
+                ${conf_overrides|h}<br>
+            </td>
+            <td class="collection_column collection_column_right">
+                <center>${self.run_link(req, model)}</center>
+            </td>
+        </tr>
+    </table>
 </%def>
 
 <%def name="model_description()">

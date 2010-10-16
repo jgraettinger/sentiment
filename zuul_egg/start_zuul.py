@@ -46,5 +46,5 @@ application = paste.evalexception.EvalException(application)
 
 # start the server
 import eventlet.wsgi
-eventlet.wsgi.server(eventlet.listen(('localhost', 8080)), application)
+eventlet.wsgi.server(eventlet.listen(('', 8080)), application)
 
