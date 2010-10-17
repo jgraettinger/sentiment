@@ -95,6 +95,9 @@ public:
         // normalize to obtain MLE covariance & std-deviation
         sq_std_dev *= 1.0 / _sample_mass;
 
+        if(sq_std_dev == 0)
+            throw std::runtime_error("std-deviation of 0 detected");
+
         // 'invent' some sample mass which shares the empirical mean,
         //   but has a spherical co-variance with the empirically
         //   observed std deviation. This improves the stability of

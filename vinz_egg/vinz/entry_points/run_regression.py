@@ -129,15 +129,15 @@ def run_regression(
                 sample_classes[uid] = []
                 attributes = simplejson.loads(attributes)
 
-                # TODO: More principled initialization
-                if class_sample_size[clus_id] < 2:
-                    s_prob = {clus_id: (1.0, True)}
-                else:
-                    s_prob = {}
-
                 sample = coord.add_sample(uid, type,  **attributes)
                 sample.weight = weight
-                sample.cluster_probabilities = s_prob
+
+            # TODO: More principled initialization
+            if class_sample_size[clus_id] < 2:
+                sample = coord.clusterer.get_sample(uid)
+                prob = sample.cluster_probabilities
+                prob[clus_id] = (1.0, True)
+                sample.cluster_probabilities = prob
 
             sample_classes[uid].append(clus_id)
             class_sample_size[clus_id] += 1.0
