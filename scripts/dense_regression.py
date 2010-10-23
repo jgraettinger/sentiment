@@ -116,6 +116,8 @@ def keyboard(*args):
 
     if args[0] == ' ':
         print "entropy: %f" % coord.expect_and_maximize()
+        tot_prob = sum(math.log(s.probability) for s in coord.clusterer.samples)
+        print "total prob: %f" % tot_prob
 
     if args[0] == 'a':
 
@@ -189,4 +191,47 @@ def run(name):
 
 run('display')
 
+"""
+import numpy, math
+from numpy import linalg as la
+
+class Foo(object):
+    def __init__(self, mean, covar):
+        self.mean = mean
+        self.covar = covar
+        self.p = 1.0 * len(mean)
+
+    def pdf(self, feat):
+        
+        feat = [numpy.array(feat)]
+        # initial part of the formula 
+        # this code depends only on the model parameters ... optmize? 
+        dd = la.det(self.covar)
+        inverse = la.inv(self.covar); 
+        ff = math.pow(2*math.pi,-self.p/2.0)*math.pow(dd,-0.5); 
+
+        # centered input values 
+        centered = numpy.subtract(
+            feat,numpy.repeat([self.mean], len(feat), axis=0)) 
+
+        res = ff * numpy.exp(-0.5*numpy.sum(
+            numpy.multiply(centered,numpy.dot(centered,inverse)),1)) 
+
+        return res[0]
+
+while True:
+    print "entropy: %f" % coord.expect_and_maximize()
+    tot_prob = sum(math.log(s.probability) for s in coord.clusterer.samples)
+    print "total prob: %f" % tot_prob
+
+    estimators = coord.estimators.values()
+
+    oest = [Foo(e.get_mean(), e.get_covar()) for e in estimators]
+
+    for sample in coord.clusterer.samples:
+        for e, oe in zip(estimators, oest):
+            r_e = e.estimate(sample.estimator_features)
+            r_oe = oe.pdf(sample.estimator_features.as_list())
+            assert round(r_e,4) == round(r_oe,4), '%r == %r' % (r_e, r_oe)
+"""
 

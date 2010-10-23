@@ -3,6 +3,7 @@
 
 #include "features/dense_features.hpp"
 #include <armadillo>
+#include <boost/python.hpp>
 #include <boost/shared_ptr.hpp>
 #include <vector>
 #include <cmath>
@@ -66,7 +67,7 @@ public:
         _mean += *feat * prob_class_sample;
 
         // hang on to the sample; we'll need it for co-variance
-        _samples.push_back( std::make_pair(feat, prob_class_sample));
+        _samples.push_back(std::make_pair(feat, prob_class_sample));
     }
 
     double prepare_estimator()
@@ -86,7 +87,7 @@ public:
             double  p_class_sample  = _samples[i].second; 
 
             // X - Xmean, scaled by class membership
-            arma::rowvec vec = (feat - _mean) * p_class_sample;
+            arma::rowvec vec = (feat - _mean) * std::sqrt(p_class_sample);
 
             sq_std_dev += arma::as_scalar(vec * arma::trans(vec));
             _covar += arma::trans(vec) * vec;
@@ -94,29 +95,20 @@ public:
 
         // normalize to obtain MLE covariance & std-deviation
         sq_std_dev *= 1.0 / _sample_mass;
+        _covar *= 1.0 / _sample_mass;
 
         if(sq_std_dev == 0)
             throw std::runtime_error("std-deviation of 0 detected");
 
-        // 'invent' some sample mass which shares the empirical mean,
-        //   but has a spherical co-variance with the empirically
-        //   observed std deviation. This improves the stability of
-        //   the solution in cases where the empirical observation
-        //   is not full-rank. The amount of contributed mass is
-        //   conditioned on the number of features, as the number
-        //   of empirical samples required for a stable solution
-        //   increases with the number of features.
+        // interpolate covariance matrix & a spherical co-variance,
+        //   weighted by the quantity of sample-mass relative to the
+        //   dimensionality of the distribution
+        unsigned rank = arma::rank(_covar);
 
-        double invented_sample_mass = std::log(_n_features) * 4;
-
-        _covar += invented_sample_mass * sq_std_dev * arma::eye(
-            _covar.n_rows, _covar.n_cols);
-
-        _sample_mass += invented_sample_mass;
-
-        // normalize to obtain combined observed &
-        //   'invented' covariance matrix
-        _covar *= 1.0 / _sample_mass;
+        double coeff = (double)(_n_features - rank) / (double)(_n_features);
+        //double coeff = std::exp(-1.0 * _sample_mass / (_n_features + 1.0)); 
+        _covar = (1.0 - coeff) * _covar + coeff * sq_std_dev * \
+            arma::eye(_covar.n_rows, _covar.n_cols);;
 
         // Perform SVD over co-variance matrix
         if( !arma::svd(_svd_U, _svd_s, _svd_V, _covar))
@@ -127,14 +119,11 @@ public:
         _inv_covar = arma::inv(_covar);
 
         // determinant is product of eigenvalues; scale by 2 * PI
-        double scaled_det = 0;
+        double scaled_det = 1;
         for(arma::colvec::const_iterator it = _svd_s.begin(); it != _svd_s.end(); ++it)
-            scaled_det += 2.0 * M_PI * *it;
+            scaled_det *= 2.0 * M_PI * *it;
 
         _gauss_norm = std::sqrt(scaled_det);
-
-        // return entropy of the distribution
-        return std::log( std::sqrt(scaled_det * std::pow(M_E, _n_features)));
 
         /// debug
         /*
@@ -149,15 +138,15 @@ public:
 
         std::cout << "gauss norm:\n  " << _gauss_norm << std::endl;
         */
+
+        // return entropy of the distribution
+        return 0.5 * std::log(scaled_det * std::pow(M_E, _n_features));
     }
 
     double estimate(const features_t::ptr_t & fptr)
     {
         if(fptr->n_cols != _n_features)
             throw std::runtime_error("arity mismatch");
-
-        if(_gauss_norm == 0)
-            return -std::numeric_limits<double>::max();
 
         arma::rowvec t = *fptr - _mean;
 
@@ -186,6 +175,22 @@ public:
         std::vector<double> v(_mean.n_cols);
         std::copy(_mean.begin(), _mean.end(), v.begin());
         return v;
+    }
+
+    boost::python::list get_covar()
+    {
+        boost::python::list outer;
+        for(unsigned r = 0; r != _covar.n_rows; ++r)
+        {
+            boost::python::list inner;
+            outer.append(inner);
+
+            for(unsigned c = 0; c != _covar.n_cols; ++c)
+            {
+                inner.append(_covar(r,c));
+            }
+        }
+        return outer;
     }
 
     std::vector<double> get_eigenvector(unsigned i)

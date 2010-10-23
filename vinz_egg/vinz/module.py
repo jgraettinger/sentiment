@@ -71,11 +71,11 @@ class Module(object):
         binder.bind_instance(getty.Config,
             with_annotation = 'n_pca_output_features', to = 25)
         binder.bind_instance(getty.Config,
-            with_annotation = 'soft_prob_coeff_init', to = 0.05)
+            with_annotation = 'soft_prob_coeff_init', to = 0.10)
         binder.bind_instance(getty.Config,
-            with_annotation = 'soft_prob_coeff_step', to = 0.03)
+            with_annotation = 'soft_prob_coeff_step', to = 0.10)
         binder.bind_instance(getty.Config,
-            with_annotation = 'soft_prob_coeff_anneal', to = 0.5)
+            with_annotation = 'soft_prob_coeff_anneal', to = 0.50)
 
         return binder
 

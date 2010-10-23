@@ -14,6 +14,7 @@ void make_gaussian_estimator_bindings()
         .def("prepare_estimator", &gaussian_estimator::prepare_estimator)
         .def("estimate", &gaussian_estimator::estimate)
         .def("get_mean", &gaussian_estimator::get_mean)
+        .def("get_covar", &gaussian_estimator::get_covar)
         .def("get_eigenvector", &gaussian_estimator::get_eigenvector)
         .def("get_eigenvalue", &gaussian_estimator::get_eigenvalue)
         .add_property("soft_prob_coeff",

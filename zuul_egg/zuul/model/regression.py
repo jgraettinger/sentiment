@@ -103,29 +103,27 @@ class Regression(BaseModel):
 
         results = []
         # is currently running, or hasn't yet run
-        if self.is_running or not self.precision:
+        if self.is_running or not self.has_results:
             return results
 
-        exp_prec = self.expected_results_dict.get('precision', {})
-        exp_recall = self.expected_results_dict.get('recall', {})
+        for stat_name, exp_stat_val in self.expected_results_dict.items():
 
-        for class_name in self.class_names_list:
-            p = round(self.precision[class_name][-1], 4)
-            r = round(self.recall[class_name][-1], 4)
+            assert hasattr(self, stat_name), "No such statistic"
 
-            e_p = exp_prec.get(class_name, None)
-            e_r = exp_recall.get(class_name, None)
-            e_p = round(e_p, 4) if e_p else None
-            e_r = round(e_r, 4) if e_r else None
+            act_stat_val = getattr(self, stat_name)
 
-            if e_p != None:
-                results.append(('%s-precision' % class_name, e_p, p))
-            if e_r != None:
-                results.append(('%s-recall' % class_name, e_r, r))
-            if e_p != None and e_r != None:
-                f = 2.0 * p * r / (p + r)
-                e_f = 2.0 * e_p * e_r / (e_p + e_r)
-                results.append(('%s-fscore' % class_name, e_f, f))
+            if isinstance(act_stat_val, dict):
+                # series per-class
+                for class_name in self.class_names_list:
+                    exp = round(exp_stat_val[class_name], 4)
+                    act = round(act_stat_val[class_name][-1], 4)
+                    results.append(('%s-%s' % (class_name, stat_name), exp, act))
+
+            else:
+                # simple series
+                exp = round(exp_stat_val, 4)
+                act = round(act_stat_val[-1], 4)
+                results.append(('%s' % stat_name, exp, act))
 
         return results
 
@@ -134,20 +132,38 @@ class Regression(BaseModel):
         return self._live.is_running
 
     @property
+    def has_results(self):
+        return True if self._live.stats else False
+
+    @property
     def precision(self):
-        return self._live.precision
+        return self._live.stats['precision']
 
     @property
     def recall(self):
-        return self._live.recall
+        return self._live.stats['recall']
+
+    @property
+    def fmeasure(self):
+
+        fm = {}
+        for cname in self.class_names_list:
+            fm[cname] = [(2.0 * p * r / (p + r + 0.00001)) for (p,r) in zip(
+                self.precision[cname], self.recall[cname])]
+
+        return fm
 
     @property
     def entropy(self):
-        return self._live.entropy
+        return self._live.stats['entropy']
 
     @property
-    def prior_prob(self):
-        return self._live.prior_prob
+    def log_likelihood(self):
+        return self._live.stats['log_likelihood']
+
+    @property
+    def prior_probabilities(self):
+        return self._live.stats['prior_probabilities']
 
     @classmethod
     def define_orm_mapping(kls, orm):
@@ -179,8 +195,7 @@ class Regression(BaseModel):
 class _LiveRegression(object):
 
     def __init__(self):
-        self.precision = {}
-        self.recall = {}
+        self.stats = {}
         self._proc = None
         return
 
@@ -193,10 +208,7 @@ class _LiveRegression(object):
         if self.is_running:
             raise RuntimeError("Regression is already running!")
 
-        self.entropy = []
-        self.precision = {}
-        self.recall = {}
-        self.prior_prob = {}
+        self.stats = {}
 
         self._proc = subprocess.Popen(['python'],
             stdin  = subprocess.PIPE,
@@ -225,15 +237,17 @@ class _LiveRegression(object):
         self._proc.stdin.close()
 
         for iter_no, line in enumerate(self._proc.stdout):
-            entropy, precision, recall, prior_prob = simplejson.loads(line)
+            stats = simplejson.loads(line)
 
-            self.entropy.append(entropy)
-            for k, v in precision.items():
-                self.precision.setdefault(k, []).append(v)
-            for k, v in recall.items():
-                self.recall.setdefault(k, []).append(v)
-            for k, v in prior_prob.items():
-                self.prior_prob.setdefault(k, []).append(v)
+            for stat_name, stat_value in stats.items():
+
+                if isinstance(stat_value, dict):
+                    sub_dict = self.stats.setdefault(stat_name, {})
+
+                    for sub_name, sub_value in stat_value.items():
+                        sub_dict.setdefault(sub_name, []).append(sub_value)
+                else:
+                    self.stats.setdefault(stat_name, []).append(stat_value)
 
         err = self._proc.stderr.read()
         code = self._proc.wait()

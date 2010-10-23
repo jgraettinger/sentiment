@@ -38,41 +38,45 @@ def iterate_and_report(coord, sample_classes, class_sample_size):
         # normalize precision by total class prob
         prec[clus_id] /= tot_clus_prob[clus_id]
         # normalize recall by # of class samples
-        recall[clus_id] /= n_samples 
+        recall[clus_id] /= n_samples
 
-    priors = coord.clusterer.cluster_set.priors
+    stats = dict(
+        entropy = entropy,
+        log_likelihood = sum(
+            math.log(s.probability) for s in coord.clusterer.samples),
+        precision = prec,
+        recall = recall,
+        prior_probabilities = coord.clusterer.cluster_set.priors)
 
-    return entropy, prec, recall, priors
+    return stats
 
-def anneal():
+def anneal(coord, sample_classes):
 
-    min_li, min_uid, min_probs, min_cur_clus, min_act_clus = \
-        None, None, None, None, None
+    # identify the least-likely 'soft' sample
+    soft_samples = [s for s in coord.clusterer.samples if not \
+        any(j[1] for (i,j) in s.cluster_probabilities.items())]
 
-    for cur_uid, cur_li, probs in coord.sample_state():
+    #sample = min(soft_samples, key = lambda s: s.probability)
+    sample_samples = sorted(soft_samples, key = lambda s: s.probability)
+    sample = soft_samples[int(len(soft_samples) * 0.1)]
 
-        # it's already fixed
-        if any(i[1] for i in probs.values()):
-            continue
+    # extract class with hightest estimator probability
+    est_class = max(sample.cluster_probabilities.items(),
+        key = lambda i: i[1][0])[0]
 
-        if min_li is None or cur_li < min_li:
-            min_uid = cur_uid
-            min_li = cur_li
-            min_probs = probs
+    # set hard probability for class membership(s)
+    prob = {}
+    for cname in sample_classes[sample.uid]:
+        prob[cname] = (1, True)
 
-            min_cur_clus = max((j, i) for i, j in probs.items())[1]
-            min_act_clus = 'class_%s' % cur_uid.split('_')[1]
+    sample.cluster_probabilities = prob
 
-    print min_uid, min_li
+    if est_class not in prob:
+        # was estimated to be in a cluster that it's not
+        coord.anneal_cluster(est_class)
+        for cname in prob:
+            coord.anneal_cluster(cname)
 
-    min_probs[min_act_clus] = (1, True)
-    x, y = sample_positions[min_uid]
-    coord.drop_sample(min_uid)
-    coord.add_sample(min_uid, 'dense_passthrough', 1,
-        min_probs, features = [x, y])
-
-    coord.anneal_cluster(min_cur_clus)
-    coord.anneal_cluster(min_act_clus)
     return
 
 def run_regression(
@@ -150,6 +154,9 @@ def run_regression(
         stats = iterate_and_report(coord, sample_classes, class_sample_size)
         print simplejson.dumps(stats)
         sys.stdout.flush()
+
+        if i and not i % 10:
+            anneal(coord, sample_classes)
 
     return
 

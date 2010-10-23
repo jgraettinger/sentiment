@@ -98,22 +98,32 @@ class results(RegressionAction):
         results = {
             'series_length': inst.iteration_count,
             'is_running': inst.is_running,
+            'has_results': inst.has_results,
             'class_names': inst.class_names_list,
-            'stats': {}
+            'stats': {},
         }
+
+        resp = Response()
+        resp.content_type = 'application/json'
+        resp.content_type_params = {'charset': 'utf8'}
+
+        if not inst.has_results:
+            resp.body = simplejson.dumps(results)
+            return resp
 
         if 'precision' in req.GET:
             results['stats']['precision'] = inst.precision
         if 'recall' in req.GET:
             results['stats']['recall'] = inst.recall
-        if 'prior_prob' in req.GET:
-            results['stats']['prior_prob'] = inst.prior_prob
+        if 'fmeasure' in req.GET:
+            results['stats']['fmeasure'] = inst.fmeasure
+        if 'prior_probabilities' in req.GET:
+            results['stats']['prior_probabilities'] = inst.prior_probabilities
         if 'entropy' in req.GET:
-            results['entropy'] = inst.entropy
+            results['stats']['entropy'] = inst.entropy
+        if 'log_likelihood' in req.GET:
+            results['stats']['log_likelihood'] = inst.log_likelihood
 
-        resp = Response()
-        resp.content_type = 'application/json'
-        resp.content_type_params = {'charset': 'utf8'}
         resp.body = simplejson.dumps(results)
         return resp
 

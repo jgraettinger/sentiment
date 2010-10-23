@@ -14,57 +14,72 @@ ${parent.body(req, model_ns, model, child_groups)}
 
         function onDataReceived(data, div_id, uri) {
 
-            var flot_data = []
-            for(var i in data.class_names)
+            if(data.is_running)
             {
-                var label = data.class_names[i];
-
-                for(var stat_name in data.stats)
-                {
-                    var stat = data.stats[stat_name][label];
-                    var flot_series = [];
-
-                    for(var j in stat)
-                    {
-                        flot_series.push([j, stat[j]]);
-                    }
-                    flot_data.push({data: flot_series,
-                        label: label + "-" + stat_name});
-                }
-
-                var prec = data.stats.precision[label];
-                var recall = data.stats.recall[label];
-                var fmeasure = [];
-
-                for(var j in prec)
-                {
-                    fmeasure.push([j,
-                        2 * prec[j] * recall[j] / (prec[j] + recall[j])]);
-                }
-                flot_data.push({data: fmeasure,
-                    label: label + "-" + "fmeasure"});
+                // schedule an update of the plot
+                setTimeout( function() {
+                    $.ajax({
+                        url: uri,
+                        method: 'GET',
+                        dataType: 'json',
+                        success: function(data) {
+                            onDataReceived(data, div_id, uri);}
+                    });
+                }, 1000);
             }
 
-            // and plot all we got
+            if(!data.has_results)
+            {
+                // placeholder plot
+                $.plot($(div_id), [{data: []}], {
+                    xaxis: {min: 0.0, max: data.series_length},
+                    yaxis: {min: 0.0, max: 1.0},
+                });
+                return;
+            }
+
+            var flot_data = [];
+            for(var stat_name in data.stats)
+            {
+                var stat_val = data.stats[stat_name];
+
+                if(stat_val instanceof Array)
+                {
+                    var flot_series = [];
+
+                    // flat statistic (not per-class)
+                    for(var j in stat_val)
+                    {
+                        flot_series.push([j, stat_val[j]]);
+                    }
+                    flot_data.push({data: flot_series,
+                        label: stat_name});
+
+                } else {
+
+                    // statistic is per-class
+                    for(var i in data.class_names)
+                    {
+                        var cname = data.class_names[i];
+                        var sub_val = stat_val[cname];
+                        var flot_series = [];
+
+                        for(var j in sub_val)
+                        {
+                            flot_series.push([j, sub_val[j]]);
+                        }
+                        flot_data.push({data: flot_series,
+                            label: cname + '-' + stat_name});
+                    }
+                }
+            }
+
+            // plot all we got
             $.plot($(div_id), flot_data, {
                 xaxis: {min: 0.0, max: data.series_length},
                 yaxis: {min: 0.0, max: 1.0},
                 legend: {position: "se", backgroundOpacity: 0.3},
             });
-
-            if(!data.is_running)
-                return;
-
-            // schedule an update of the plot
-            setTimeout( function() {
-                $.ajax({
-                    url: uri,
-                    method: 'GET',
-                    dataType: 'json',
-                    success: function(data) {
-                        onDataReceived(data, div_id, uri);}
-                });
-            }, 1000);
         }
 
         $(document).ready( function() {
