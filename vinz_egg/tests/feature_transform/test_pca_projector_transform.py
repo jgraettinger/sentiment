@@ -1,6 +1,6 @@
 
-from cluster.feature_transform import PCAProjTransform
-from cluster.features import DenseFeatures, SparseFeatures
+from vinz.feature_transform import PCAProjTransform
+from vinz.features import DenseFeatures, SparseFeatures
 import unittest
 
 class TestPCAProjectorTransform(unittest.TestCase):
@@ -10,6 +10,7 @@ class TestPCAProjectorTransform(unittest.TestCase):
         # principal components of this dataset
         #  are [-0.6779, -0.7352] (eigen 1.28) & 
         #      [-0.7352, 0.6779]  (eigen 0.05)
+        # mean is {1: 1.81, 5: 1.91}
 
         dataset = [
             (2.5, 2.4),
@@ -32,21 +33,22 @@ class TestPCAProjectorTransform(unittest.TestCase):
 
         # test vector along first principal component
         v = pca_transform.transform(
-            DenseFeatures([0.6779, 0.7352])).as_list()
+            DenseFeatures([2.4878, 2.6452])).as_list()
 
-        self.assertTrue( abs(v[1] / v[0]) < 0.0001)
+        self.assertTrue( abs(v[1] / v[0]) < 0.001)
 
         # test vector along second principal component
         v = pca_transform.transform(
-            DenseFeatures([-0.7352, 0.6779])).as_list()
+            DenseFeatures([1.075, 2.588])).as_list()
 
-        self.assertTrue( abs(v[0] / v[1]) < 0.0001)
+        self.assertTrue( abs(v[0] / v[1]) < 0.001)
 
     def test_sparse(self):
 
         # principal components of this dataset
         #  are [-0.6779, -0.7352] (eigen 1.28) & 
         #      [-0.7352, 0.6779]  (eigen 0.05)
+        # mean is {1: 1.81, 5: 1.91}
 
         dataset = [
             {1: 2.5, 5: 2.4, 0: 0.0, 2: 0.0},
@@ -69,13 +71,13 @@ class TestPCAProjectorTransform(unittest.TestCase):
 
         # test vector along first principal component
         v = pca_transform.transform(
-            SparseFeatures({1: 0.6779, 5: 0.7352, 3: 0.0})).as_list()
+            SparseFeatures({1: 2.4878, 5: 2.6452, 3: 0.0})).as_list()
 
-        self.assertTrue( abs(v[1] / v[0]) < 0.0001)
+        self.assertTrue( abs(v[1] / v[0]) < 0.001)
 
         # test vector along second principal component
         v = pca_transform.transform(
-            SparseFeatures({1: -0.7352, 5: 0.6779, 0: 0.0})).as_list()
+            SparseFeatures({1: 1.075, 5: 2.588, 0: 0.0})).as_list()
 
-        self.assertTrue( abs(v[0] / v[1]) < 0.0001)
+        self.assertTrue( abs(v[0] / v[1]) < 0.001)
 

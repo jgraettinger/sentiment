@@ -65,7 +65,10 @@ private:
     // for efficiency of computing dot-products in the
     //  sparse-input case, store eigenvectors as hash-maps
     typedef boost::unordered_map<unsigned, double> feature_hash_t;
-    std::vector<feature_hash_t> _sparse_eigvecs; 
+    std::vector<feature_hash_t> _sparse_eigvecs;
+
+    // projection of feature-space origin (after mean-shifting) onto eigenvecs
+    std::vector<double> _sparse_mean_eigproj;
 
     const unsigned _n_output_features;
 };
@@ -278,13 +281,23 @@ struct pca_projector_transform::train_transform<features::sparse_features>
             }
         }
 
+        self->_sparse_mean_eigproj.resize(self->_n_output_features);
+
+        // normalize eigen-vectors
         for(unsigned i = 0; i != self->_n_output_features; ++i)
         {
             feature_hash_t & hvec = self->_sparse_eigvecs[i];
             double norm = 1.0 / self->_svd_s[i];
 
+            double mean_proj = 0;
+
             for(feature_hash_t::iterator it = hvec.begin(); it != hvec.end(); ++it)
+            {
                 it->second *= norm;
+
+                mean_proj -= mean[it->first] * it->second;
+            }
+            self->_sparse_mean_eigproj[i] = mean_proj;
         }
 /*
         for(unsigned i = 0; i != self->_n_output_features; ++i)
@@ -385,6 +398,10 @@ struct pca_projector_transform::transform<features::sparse_features>
             const feature_hash_t & eigen_v = self->_sparse_eigvecs[i];
             double & proj_i = ofeat[i];
 
+            // initialize w/ the projection onto the eigenvector
+            //   of the origin shifted by the mean
+            proj_i = self->_sparse_mean_eigproj[i];
+
             features::iterator<input_features_t>::type f_it, f_end;
             f_it = ifeat->begin(); f_end = ifeat->end();
 
@@ -394,6 +411,7 @@ struct pca_projector_transform::transform<features::sparse_features>
                 if(e_it == eigen_v.end())
                     continue;
 
+                // update w/ deviations from origin
                 proj_i += e_it->second * f_it->second;
             }
         }
