@@ -59,6 +59,10 @@ struct iterator<dense_features>
 };
 
 template<>
+inline unsigned size<dense_features>(reference<dense_features>::type f)
+{ return f->n_cols; }
+
+template<>
 inline unsigned deref_id(const iterator<dense_features>::type & it)
 { return it->get<0>(); };
 

@@ -4,6 +4,7 @@
 #include "ref_counted.hpp"
 #include <algorithm>
 #include <vector>
+#include <cmath>
 #include <map>
 
 namespace features
@@ -55,6 +56,18 @@ public:
             }
         }
         return prod;
+    }
+
+    void normalize_L2()
+    {
+        double n = 0;
+        for(const_iterator it = begin(); it != end(); ++it)
+            n += it->second * it->second;
+
+        n = 1.0 / std::sqrt(n);
+
+        for(iterator it = begin(); it != end(); ++it)
+            it->second *= n;
     }
 };
 

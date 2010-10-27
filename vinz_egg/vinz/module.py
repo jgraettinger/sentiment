@@ -52,8 +52,11 @@ class Module(object):
 
         # feature-transform bindings
         binder.bind(vinz.feature_transform.FeatureTransform,
-            to = vinz.feature_transform.PCAProjTransform,
-            with_annotation = 'PCAProjTransform') 
+            to = vinz.feature_transform.PcaTransform,
+            with_annotation = 'PcaTransform') 
+        binder.bind(vinz.feature_transform.FeatureTransform,
+            to = vinz.feature_transform.IdfPcaTransform,
+            with_annotation = 'IdfPcaTransform') 
 
         # configuration parameters
         binder.bind_instance(getty.Config,
@@ -76,6 +79,11 @@ class Module(object):
             with_annotation = 'soft_prob_coeff_step', to = 0.10)
         binder.bind_instance(getty.Config,
             with_annotation = 'soft_prob_coeff_anneal', to = 0.50)
+
+        binder.bind_instance(getty.Config,
+            with_annotation = 'min_df_count', to = 5)
+        binder.bind_instance(getty.Config,
+            with_annotation = 'max_df_threshold', to = 0.90)
 
         return binder
 

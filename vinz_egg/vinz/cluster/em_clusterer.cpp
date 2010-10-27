@@ -40,11 +40,14 @@ void make_em_clusterer_bindings()
 
     bind_em_clusterer<sparse_clusterer_t>("SparseGaussEmClusterer")
     .def("transform_features", &sparse_clusterer_t::transform_features<
-        feature_transform::pca_projector_transform>)
+        feature_transform::pca_transform>)
     .def("transform_features", &sparse_clusterer_t::transform_features<
+        feature_transform::idf_pca_transform>);
+/*    .def("transform_features", &sparse_clusterer_t::transform_features<
         feature_transform::pca_igain_cutoff_transform>)
     .def("transform_features", &sparse_clusterer_t::transform_features<
         feature_transform::proj_igain_cutoff_transform>);
+*/
 }
 
 };

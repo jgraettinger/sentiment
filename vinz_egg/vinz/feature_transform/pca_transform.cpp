@@ -7,23 +7,23 @@
 namespace feature_transform {
 namespace bpl = boost::python;
 
-void make_pca_proj_transform_bindings()
+void make_pca_transform_bindings()
 {
-    bpl::class_<pca_projector_transform,
-        pca_projector_transform::ptr_t, boost::noncopyable>(
-            "PCAProjTransform",
+    bpl::class_<pca_transform,
+        pca_transform::ptr_t, boost::noncopyable>("PcaTransform",
             bpl::init<unsigned>( bpl::args("n_output_features")))
         .def("train_transform", &feature_transform::py_train_transform_helper<
-            pca_projector_transform, features::dense_features>)
+            pca_transform, features::dense_features>)
         .def("transform", &feature_transform::py_transform_helper<
-            pca_projector_transform, features::dense_features>)
+            pca_transform, features::dense_features>)
         .def("train_transform", &feature_transform::py_train_transform_helper<
-            pca_projector_transform, features::sparse_features>)
+            pca_transform, features::sparse_features>)
         .def("transform", &feature_transform::py_transform_helper<
-            pca_projector_transform, features::sparse_features>)
-        .def("get_eigenvalue", &pca_projector_transform::get_eigenvalue)
-        .def("get_eigenvector", &pca_projector_transform::get_eigenvector);
+            pca_transform, features::sparse_features>)
+        .def("get_eigenvalue", &pca_transform::get_eigenvalue)
+        .def("get_eigenvector", &pca_transform::get_eigenvector);
 
+/*
     bpl::class_<pca_proj_igain_cutoff_transform,
         pca_proj_igain_cutoff_transform::ptr_t, boost::noncopyable>(
             "PCAProjIGainCutoffTransform",
@@ -56,6 +56,7 @@ void make_pca_proj_transform_bindings()
             pca_igain_cutoff_transform, features::sparse_features>)
         .def("transform", &feature_transform::py_transform_helper<
             pca_igain_cutoff_transform, features::sparse_features>);
+*/
 }
 
 };

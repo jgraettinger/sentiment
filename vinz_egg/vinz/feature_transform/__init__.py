@@ -8,6 +8,18 @@ from _feature_transform import *
 # injection key
 class FeatureTransform: pass
 
+getty.Extension(IdfTransform).requires(
+    max_df_threshold = getty.Config('max_df_threshold'),
+    min_df_count = getty.Config('min_df_count'))
+
+getty.Extension(PcaTransform).requires(
+    n_output_features = getty.Config('n_pca_output_features'))
+
+getty.Extension(IdfPcaTransform).requires(
+    idf_transform = IdfTransform,
+    pca_transform = PcaTransform)
+
+"""
 getty.Extension(InformationGainStatistic).requires(
     class_smoothing_factor = getty.Config('class_smoothing_factor'))
 
@@ -28,8 +40,6 @@ getty.Extension(CompactIGainCutoffTransform).requires(
     igain_cutoff_transform = IGainCutoffTransform,
     compact_transform = CompactTransform)
 
-getty.Extension(PCAProjTransform).requires(
-    n_output_features = getty.Config('n_pca_output_features'))
 
 getty.Extension(PCAProjIGainCutoffTransform).requires(
     proj_igain_cutoff_transform = ProjIGainCutoffTransform,
@@ -42,6 +52,7 @@ getty.Extension(PCACompactIGainCutoffTransform).requires(
 getty.Extension(PCAIGainCutoffTransform).requires(
     igain_cutoff_transform = IGainCutoffTransform,
     pca_proj_transform = PCAProjTransform)
+
 
 # 'is_static' is a meta-property which indicates whether the
 #   transform is affected by cluster membership probabilities.
@@ -59,4 +70,11 @@ PCAProjTransform.is_static = True
 PCAProjIGainCutoffTransform.is_static = False
 PCAIGainCutoffTransform.is_static = False
 PCACompactIGainCutoffTransform.is_static = False
+"""
+
+IdfTransform.is_static = True
+PcaTransform.is_static = True
+
+# composite transforms
+IdfPcaTransform.is_static = True
 

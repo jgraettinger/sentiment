@@ -20,7 +20,9 @@ void bind_cluster_sample(const char * name)
         &ClusterSample::set_cluster_probabilities)
     .def_readonly("uid", &ClusterSample::uid)
     .def_readwrite("weight", &ClusterSample::weight)
-    .def_readonly("input_features", &ClusterSample::input_features)
+    .add_property("input_features", bpl::make_getter(
+        &ClusterSample::input_features,
+        bpl::return_value_policy<bpl::return_by_value>()))
     .add_property("estimator_features", bpl::make_getter(
         &ClusterSample::est_features,
         bpl::return_value_policy<bpl::return_by_value>()))

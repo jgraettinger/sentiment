@@ -40,6 +40,10 @@ inline typename iterator<Features>::type end(
     return iterator<Features>::end(f);
 }
 
+template<typename Features>
+inline unsigned size(typename reference<Features>::type f)
+{ return f->size(); }
+
 template<typename FeaturesIterator>
 inline unsigned deref_id(const FeaturesIterator & it)
 { return it->first; }

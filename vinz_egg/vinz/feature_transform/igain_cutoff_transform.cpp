@@ -22,6 +22,7 @@ bpl::object py_derive_statistics(typename StatisticProvider::ptr_t stat_prov)
 
 void make_igain_cutoff_transform_bindings()
 {
+/*
     bpl::class_<information_gain_statistic,
         information_gain_statistic::ptr_t, boost::noncopyable>(
             "InformationGainStatistic",
@@ -60,6 +61,7 @@ void make_igain_cutoff_transform_bindings()
             compact_igain_cutoff_transform, features::sparse_features>)
         .def("transform", &feature_transform::py_transform_helper<
             compact_igain_cutoff_transform, features::sparse_features>);
+*/
 }
 
 };

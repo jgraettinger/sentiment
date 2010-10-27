@@ -1,5 +1,5 @@
-#ifndef FEATURE_TRANSFORM_PCA_PROJECTOR_TRANSFORM_HPP
-#define FEATURE_TRANSFORM_PCA_PROJECTOR_TRANSFORM_HPP
+#ifndef FEATURE_TRANSFORM_PCA_TRANSFORM_HPP
+#define FEATURE_TRANSFORM_PCA_TRANSFORM_HPP
 
 #include "features/dense_features.hpp"
 #include "features/traits.hpp"
@@ -9,13 +9,13 @@
 
 namespace feature_transform {
 
-class pca_projector_transform
+class pca_transform
 {
 public:
 
-    typedef boost::shared_ptr<pca_projector_transform> ptr_t;
+    typedef boost::shared_ptr<pca_transform> ptr_t;
 
-    pca_projector_transform(unsigned n_output_features)
+    pca_transform(unsigned n_output_features)
      : _n_output_features(n_output_features) 
     { }
 
@@ -74,7 +74,7 @@ private:
 };
 
 template<>
-struct pca_projector_transform::train_transform<features::dense_features>
+struct pca_transform::train_transform<features::dense_features>
 {
     ptr_t self;
     train_transform(const ptr_t & self) : self(self) {}
@@ -153,7 +153,7 @@ struct pca_projector_transform::train_transform<features::dense_features>
 };
 
 template<>
-struct pca_projector_transform::transform<features::dense_features>
+struct pca_transform::transform<features::dense_features>
 {
     ptr_t self;
     transform(const ptr_t & self) : self(self) {}
@@ -179,7 +179,7 @@ struct pca_projector_transform::transform<features::dense_features>
 };
 
 template<>
-struct pca_projector_transform::train_transform<features::sparse_features>
+struct pca_transform::train_transform<features::sparse_features>
 {
     ptr_t self;
     train_transform(const ptr_t & self) : self(self) {}
@@ -377,7 +377,7 @@ private:
 };
 
 template<>
-struct pca_projector_transform::transform<features::sparse_features>
+struct pca_transform::transform<features::sparse_features>
 {
     ptr_t self;
     transform(const ptr_t & self) : self(self) {}

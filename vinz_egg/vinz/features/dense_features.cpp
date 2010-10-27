@@ -20,11 +20,6 @@ namespace boost {
     }
 }
 
-namespace boost{ namespace python{
-
-
-} } //boost::python
-
 namespace features
 {
 namespace bpl = boost::python;

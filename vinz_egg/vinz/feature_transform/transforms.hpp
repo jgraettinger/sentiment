@@ -4,7 +4,8 @@
 #include "feature_transform/information_gain_statistic.hpp"
 #include "feature_transform/statistic_cutoff_transform.hpp"
 #include "feature_transform/random_projector_transform.hpp"
-#include "feature_transform/pca_projector_transform.hpp"
+#include "feature_transform/idf_transform.hpp"
+#include "feature_transform/pca_transform.hpp"
 #include "feature_transform/compact_transform.hpp"
 #include "feature_transform/chained_transform.hpp"
 
@@ -15,10 +16,16 @@ typedef statistic_cutoff_transform<
 > igain_cutoff_transform;
 
 typedef chained_transform<
+    idf_transform,
+    pca_transform
+> idf_pca_transform;
+
+typedef chained_transform<
     igain_cutoff_transform,
     random_projector_transform
 > proj_igain_cutoff_transform;
 
+/*
 typedef chained_transform<
     igain_cutoff_transform,
     compact_transform
@@ -26,18 +33,19 @@ typedef chained_transform<
 
 typedef chained_transform<
     proj_igain_cutoff_transform,
-    pca_projector_transform
+    pca_transform
 > pca_proj_igain_cutoff_transform;
 
 typedef chained_transform<
     compact_igain_cutoff_transform,
-    pca_projector_transform
+    pca_transform
 > pca_compact_igain_cutoff_transform;
 
 typedef chained_transform<
     igain_cutoff_transform,
-    pca_projector_transform
+    pca_transform
 > pca_igain_cutoff_transform;
+*/
 
 };
 
