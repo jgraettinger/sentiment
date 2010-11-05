@@ -35,6 +35,8 @@ void make_cluster_sample_bindings()
         "cluster_sample_dense_dense");
     bind_cluster_sample<cluster_sample<sparse_features, dense_features> >(
         "cluster_sample_sparse_dense");
+    bind_cluster_sample<cluster_sample<sparse_features, sparse_features> >(
+        "cluster_sample_sparse_sparse");
 }
 
 };

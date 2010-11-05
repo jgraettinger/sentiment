@@ -4,6 +4,7 @@
 #include "features/sparse_features.hpp"
 #include "features/dense_features.hpp"
 #include "estimation/gaussian_estimator.hpp"
+#include "estimation/inner_product_estimator.hpp"
 
 #include <boost/python.hpp>
 
@@ -48,6 +49,14 @@ void make_em_clusterer_bindings()
     .def("transform_features", &sparse_clusterer_t::transform_features<
         feature_transform::proj_igain_cutoff_transform>);
 */
+
+    typedef em_clusterer<
+        features::sparse_features,
+        estimation::inner_product_estimator> inner_product_clusterer_t;
+
+    bind_em_clusterer<inner_product_clusterer_t>("InnerProductClusterer")
+    .def("transform_features", &inner_product_clusterer_t::transform_features<
+        feature_transform::idf_transform>);
 }
 
 };

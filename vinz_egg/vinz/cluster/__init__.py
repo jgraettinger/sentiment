@@ -9,4 +9,4 @@ class Clusterer: pass
 
 DenseGaussEmClusterer.estimator_type = vinz.estimation.GaussianEstimator
 SparseGaussEmClusterer.estimator_type = vinz.estimation.GaussianEstimator
-
+InnerProductClusterer.estimator_type = vinz.estimation.InnerProductEstimator

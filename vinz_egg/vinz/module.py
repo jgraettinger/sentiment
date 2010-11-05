@@ -49,14 +49,20 @@ class Module(object):
         binder.bind(vinz.cluster.Clusterer,
             to = vinz.cluster.DenseGaussEmClusterer,
             with_annotation = 'DenseGaussEmClusterer')
+        binder.bind(vinz.cluster.Clusterer,
+            to = vinz.cluster.InnerProductClusterer,
+            with_annotation = 'InnerProductClusterer')
 
         # feature-transform bindings
         binder.bind(vinz.feature_transform.FeatureTransform,
             to = vinz.feature_transform.PcaTransform,
-            with_annotation = 'PcaTransform') 
+            with_annotation = 'PcaTransform')
         binder.bind(vinz.feature_transform.FeatureTransform,
             to = vinz.feature_transform.IdfPcaTransform,
-            with_annotation = 'IdfPcaTransform') 
+            with_annotation = 'IdfPcaTransform')
+        binder.bind(vinz.feature_transform.FeatureTransform,
+            to = vinz.feature_transform.IdfTransform,
+            with_annotation = 'IdfTransform')
 
         # configuration parameters
         binder.bind_instance(getty.Config,
