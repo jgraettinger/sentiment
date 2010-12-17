@@ -63,6 +63,9 @@ class Module(object):
         binder.bind(vinz.feature_transform.FeatureTransform,
             to = vinz.feature_transform.IdfTransform,
             with_annotation = 'IdfTransform')
+        binder.bind(vinz.feature_transform.FeatureTransform,
+            to = vinz.feature_transform.RandomProjTransform,
+            with_annotation = 'RandomProjTransform')
 
         # configuration parameters
         binder.bind_instance(getty.Config,
@@ -76,7 +79,7 @@ class Module(object):
         binder.bind_instance(getty.Config,
             with_annotation = 'class_smoothing_factor', to = 0.02)
         binder.bind_instance(getty.Config,
-            with_annotation = 'n_rand_output_features', to = 300)
+            with_annotation = 'n_rand_output_features', to = 50)
         binder.bind_instance(getty.Config,
             with_annotation = 'n_pca_output_features', to = 25)
         binder.bind_instance(getty.Config,

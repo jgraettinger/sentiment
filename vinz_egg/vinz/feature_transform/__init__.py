@@ -19,6 +19,9 @@ getty.Extension(IdfPcaTransform).requires(
     idf_transform = IdfTransform,
     pca_transform = PcaTransform)
 
+getty.Extension(RandomProjTransform).requires(
+    n_output_features = getty.Config('n_rand_output_features'))
+
 """
 getty.Extension(InformationGainStatistic).requires(
     class_smoothing_factor = getty.Config('class_smoothing_factor'))
@@ -29,8 +32,6 @@ getty.Extension(IGainCutoffTransform).requires(
     max_features = getty.Config('max_features'),
     stat_provider = InformationGainStatistic)
 
-getty.Extension(RandomProjTransform).requires(
-    n_output_features = getty.Config('n_rand_output_features'))
 
 getty.Extension(ProjIGainCutoffTransform).requires(
     igain_cutoff_transform = IGainCutoffTransform,
@@ -74,6 +75,7 @@ PCACompactIGainCutoffTransform.is_static = False
 
 IdfTransform.is_static = True
 PcaTransform.is_static = True
+RandomProjTransform.is_static = True
 
 # composite transforms
 IdfPcaTransform.is_static = True

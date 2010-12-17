@@ -43,6 +43,8 @@ void make_em_clusterer_bindings()
     .def("transform_features", &sparse_clusterer_t::transform_features<
         feature_transform::pca_transform>)
     .def("transform_features", &sparse_clusterer_t::transform_features<
+        feature_transform::random_projector_transform>)
+    .def("transform_features", &sparse_clusterer_t::transform_features<
         feature_transform::idf_pca_transform>);
 /*    .def("transform_features", &sparse_clusterer_t::transform_features<
         feature_transform::pca_igain_cutoff_transform>)

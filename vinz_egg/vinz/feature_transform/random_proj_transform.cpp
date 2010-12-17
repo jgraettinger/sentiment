@@ -21,7 +21,8 @@ void make_random_proj_transform_bindings()
         .def("train_transform", &feature_transform::py_train_transform_helper<
             random_projector_transform, features::dense_features>)
         .def("transform", &feature_transform::py_transform_helper<
-            random_projector_transform, features::dense_features>);
+            random_projector_transform, features::dense_features>)
+        .def("get_mat_r", &random_projector_transform::get_mat_r);
 };
 
 };

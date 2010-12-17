@@ -155,6 +155,9 @@ public:
 
         double result = std::exp(-0.5 * mahalanobis_dist) / _gauss_norm;
 
+        if(result < 0)
+            throw std::runtime_error("Less than 0!");
+
         return result;
     }
 

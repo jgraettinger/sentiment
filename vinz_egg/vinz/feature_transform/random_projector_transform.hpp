@@ -4,6 +4,9 @@
 #include "features/dense_features.hpp"
 #include "features/traits.hpp"
 #include <boost/functional/hash.hpp>
+#include <boost/unordered_map.hpp>
+#include <boost/python.hpp>
+#include <iostream>
 
 namespace feature_transform {
 
@@ -15,7 +18,8 @@ public:
 
     random_projector_transform(unsigned n_output_features)
      : _root_3(std::sqrt(3.0)),
-       _n_output_features(n_output_features) 
+       _n_output_features(n_output_features),
+       _rand("/dev/urandom")
     { }
 
     template<typename InputFeatures>
@@ -51,6 +55,7 @@ public:
                 new output_features_t(self->_n_output_features));
 
             output_features_t & ofeat(*of_ptr);
+            ofeat.fill(0);
 
             typename features::iterator<InputFeatures>::type it = \
                 features::begin<InputFeatures>(ifeat);
@@ -59,19 +64,32 @@ public:
 
             for(; it != end; ++it)
             {
+                unsigned f_id = features::deref_id(it);
+                double f_val = features::deref_value(it);
+
                 for(unsigned i = 0; i != self->_n_output_features; ++i)
                 {
-                    size_t h = 0;
+                    std::pair<unsigned, unsigned> key(f_id, i);
 
-                    boost::hash_combine(h, features::deref_id(it));
-                    boost::hash_combine(h, i);
+                    typename mat_r_t::iterator m_it(self->_mat_r.find(key));
 
-                    h = h % 6;
+                    if(m_it == self->_mat_r.end())
+                    {
+                        unsigned t = self->_rand.get() % 6;
+                        double m_r_val = self->_root_3;
 
-                    if(h == 0)
-                        ofeat[i] += self->_root_3 * features::deref_value(it);
-                    if(h == 1)
-                        ofeat[i] -= self->_root_3 * features::deref_value(it);
+                        if(t == 0)
+                            m_r_val *= 1;
+                        else if(t == 1)
+                            m_r_val *= -1;
+                        else
+                            m_r_val = 0;
+
+                        m_it = self->_mat_r.insert(
+                            std::make_pair(key, m_r_val)).first;
+                    }
+
+                    ofeat[i] += m_it->second * f_val;
                 }
             }
 
@@ -79,10 +97,25 @@ public:
         }
     };
 
+    boost::python::dict get_mat_r()
+    {
+        boost::python::dict d;
+        for(mat_r_t::const_iterator it = _mat_r.begin(); it != _mat_r.end(); ++it)
+        {
+            d[boost::python::make_tuple(it->first.first, it->first.second)] = it->second;
+        }
+        return d;
+    }
+
 private:
+
+    typedef boost::unordered_map<std::pair<unsigned, unsigned>, double> mat_r_t;
+    mat_r_t _mat_r;
 
     const double _root_3;
     const unsigned _n_output_features;
+
+    std::ifstream _rand;
 };
 
 }
